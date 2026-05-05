@@ -27,7 +27,7 @@ xlabel('Czas [s]');
 ylabel('Amplituda [mV]');
 legend('EKG', 'Wykryte załamki R');
 grid on;
-xlim([0 10]); % Wyświetlamy tylko pierwsze 10 sekund dla czytelności
+xlim([0 30]); % Wyświetlamy tylko pierwsze 10 sekund dla czytelności
 
 %% wyznaczenie parametrow LF, HF i LF/HF
 [LF, HF, LF_HF, f, PSD] = compute_hrv_freq(r_peaks_time);
