@@ -1,0 +1,168 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[polish]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{subfigure}
+
+\geometry{margin=2.5cm}
+
+\title{
+\Large Zaawansowane metody przetwarzania i analizy sygnałów \\[6pt]
+\textbf{Raport z postępów – Analiza HRV i klasyfikacja grup wiekowych}
+}
+
+\author{Piotr Sawicki 319003, Michał Odziemkowski 311267}
+\date{Maj 2026}
+
+\begin{document}
+
+\maketitle
+
+% =========================================================
+
+\section{Zakres wykonanych prac}
+
+W ramach bieżącego etapu projektu zrealizowano następujące zadania:
+
+\begin{itemize}
+    \item Wczytanie danych z bazy \textit{Fantasia Database} przy użyciu funkcji \texttt{rdsamp} oraz \texttt{rdann}.
+    \item Ekstrakcja sygnału EKG oraz detekcja załamków R.
+    \item Wyznaczenie odstępów RR oraz ich reprezentacji czasowej.
+    \item Implementacja funkcji obliczającej widmo HRV (PSD).
+    \item Wyznaczenie parametrów częstotliwościowych: $LF$, $HF$ oraz $LF/HF$.
+    \item Przygotowanie zbioru cech do klasyfikacji.
+\end{itemize}
+
+% =========================================================
+
+\section{Implementacja}
+
+Analiza została przeprowadzona w środowisku MATLAB. Prace zaczęto od zainstalowania pakietu "WFDB Toolbox for MATLAB", który dostępny jest na stronie Physionet. Zawiera on funkcje, które były wykorzystywane między innymi do wyznaczania miejsc, gdzie wystąpił załamek R.
+
+Proces obliczeniowy obejmuje:
+
+\begin{enumerate}
+
+    \item Obliczenie odstępów RR:
+
+    Odstępy RR wyznaczono na podstawie czasów wystąpienia kolejnych załamków R w sygnale EKG. Otrzymany sygnał reprezentuje zmienność rytmu serca w dziedzinie czasu:
+
+    \[
+    RR_i = t_{i+1} - t_i
+    \]
+
+    \item Interpolacja sygnału RR:
+
+    Ponieważ sygnał RR jest nierównomiernie próbkowany, dokonano jego interpolacji do równomiernej siatki czasowej o częstotliwości 4 Hz. Pozwala to na zastosowanie metod analizy widmowej wymagających sygnału równomiernie próbkowanego.
+
+    \item Estymacja widmowa:
+
+    Gęstość widmowa mocy (PSD) została wyznaczona metodą Welcha, która polega na uśrednianiu widm obliczonych dla nakładających się segmentów sygnału, co zmniejsza wariancję estymatora:
+
+    \[
+    PSD(f) = \text{welch}(RR)
+    \]
+
+    \item Wyznaczenie mocy w pasmach:
+
+    Moc w pasmach częstotliwości została obliczona poprzez całkowanie gęstości widmowej mocy (PSD) w odpowiednich zakresach. Do numerycznego wyznaczenia całki zastosowano metodę trapezów (funkcja \texttt{trapz} w środowisku MATLAB):
+
+    \[
+    LF = \int_{0.04}^{0.15} PSD(f)\,df
+    \]
+    \[
+    HF = \int_{0.15}^{0.4} PSD(f)\,df
+    \]
+
+    \item Obliczenie wskaźnika LF/HF:
+
+    Na podstawie wyznaczonych mocy w pasmach LF i HF obliczono wskaźnik równowagi autonomicznej, będący stosunkiem tych dwóch wielkości:
+
+    \[
+    LF/HF
+    \]
+
+\end{enumerate}
+
+% =========================================================
+
+\section{Wyniki wstępne}
+
+Uzyskane wyniki wskazują na:
+
+\begin{itemize}
+    \item Wyraźnie większą składową wysokoczęstotliwościową ($HF$) w grupie młodych.
+    \item Dominację składowych niskoczęstotliwościowych ($LF$) u osób starszych.
+    \item Istotne różnice w rozkładzie widmowym HRV pomiędzy grupami.
+\end{itemize}
+
+% \begin{figure}[H]
+% \centering
+% \includegraphics[width=0.9\textwidth]{widmo_hrv.png}
+% \caption{Porównanie widm HRV dla przykładowych rekordów (young vs elderly)}
+% \end{figure}
+
+% =========================================================
+
+\section{Klasyfikacja}
+
+Zaimplementowano klasyfikator SVM z jądrem RBF.
+
+\begin{itemize}
+    \item Podział danych: 80\% trening, 20\% test
+    \item Standaryzacja cech
+    \item Cechy wejściowe: $[LF, HF, LF/HF]$
+\end{itemize}
+
+Wstępna skuteczność klasyfikacji wynosi:
+
+\[
+Accuracy \approx XX\%
+\]
+
+% \begin{figure}[H]
+% \centering
+% \includegraphics[width=0.6\textwidth]{confusion_matrix.png}
+% \caption{Macierz pomyłek klasyfikatora SVM}
+% \end{figure}
+
+% =========================================================
+
+\section{Problemy napotkane podczas realizacji}
+
+W trakcie prac napotkano następujące trudności:
+
+\begin{itemize}
+    \item Problemy z poprawnym mapowaniem sygnałów wejściowych.
+    \item Błędy indeksowania danych wejściowych (np. odwołania poza zakres tablicy).
+    \item Wrażliwość wyników na jakość detekcji załamków R.
+    \item Konieczność odpowiedniej normalizacji danych przed klasyfikacją.
+\end{itemize}
+
+% =========================================================
+
+\section{Plan dalszych prac}
+
+W kolejnych etapach planuje się:
+
+\begin{itemize}
+    \item Rozszerzenie zbioru cech (np. SDNN, RMSSD).
+    \item Optymalizację parametrów klasyfikatora (grid search).
+    \item Walidację krzyżową (k-fold).
+    \item Analizę statystyczną różnic między grupami.
+\end{itemize}
+
+% =========================================================
+
+\section{Wnioski}
+
+Dotychczasowe wyniki potwierdzają, że analiza widmowa HRV stanowi skuteczne narzędzie do rozróżniania grup wiekowych. W szczególności obserwowany jest spadek składowej $HF$ u osób starszych, co jest zgodne z literaturą.
+
+\end{document}

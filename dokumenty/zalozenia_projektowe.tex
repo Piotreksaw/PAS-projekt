@@ -1,0 +1,87 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[polish]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{subfigure}
+\usepackage{amssymb}
+\usepackage{natbib}
+
+\geometry{margin=2.5cm}
+
+\title{
+\Large Zaawansowane metody przetwarzania i analizy sygnałów \\[6pt]
+\textbf{Analiza częstotliwościowa HRV i klasyfikacja grup wiekowych }
+}
+
+\author{Piotr Sawicki 319003, Michał Odziemkowski 311267}
+\date{Marzec 2026}
+
+\begin{document}
+
+\maketitle
+
+
+\section{Cel projektu}
+Głównym celem niniejszego projektu jest przeprowadzenie zaawansowanej analizy częstotliwościowej sygnału zmienności rytmu zatokowego (ang. \textit{Heart Rate Variability} – HRV)~. Projekt zakłada identyfikację istotnych statystycznie różnic w parametrach widmowych pomiędzy osobami młodymi a seniorami. Efektem końcowym ma być stworzenie stabilnego modelu klasyfikacyjnego, zdolnego do automatycznego rozróżniania grup wiekowych na podstawie cech wyekstrahowanych z sygnału EKG.
+
+\section{Założenia projektowe}
+W procesie badawczym przyjęto następujące założenia systemowe i merytoryczne:
+\begin{itemize}
+    \item Baza danych:
+    
+    Wykorzystanie zbioru danych \textit{Fantasia Database} (PhysioNet), zawierającego zbiór 120-minutowych zapisów EKG osób zdrowych w grupach: \textit{Young} (21–34 lata) oraz \textit{Elderly} (68–85 lat). Częstotliwość próbkowania sygnału wynosi $f_s = 250$ Hz.
+    \item Dziedzina analizy:
+    
+    Skupienie się na parametrach częstotliwościowych (widmowych).
+    \item Pasma częstotliwości:
+    
+    Analiza mocy w zakresach $LF$ (0.04--0.15 Hz) oraz $HF$ (0.15--0.4 Hz).
+    \item Narzędzia:
+    
+    Implementacja algorytmów w środowisku MATLAB z wykorzystaniem dedykowanych bibliotek do przetwarzania sygnałów i uczenia maszynowego.
+\end{itemize}
+
+\newpage
+\section{Metodyka i realizacja w środowisku MATLAB}
+Realizacja projektu przebiega w pięciu kluczowych etapach:
+\begin{enumerate}
+    \item Ekstrakcja odstępów RR:
+    
+    Wstępne przetwarzanie sygnału EKG, filtracja zakłóceń oraz detekcja załamków R.
+    %\item \textbf{Resampling i detrending:} Ponowne próbkowanie szeregu RR metodą splajnów (do częstotliwości 4 Hz) w celu uzyskania sygnału równomiernie spróbkowanego oraz usunięcie trendów wolnozmiennych.
+    \item Estymacja widmowa: 
+    
+    Wyznaczenie gęstości widmowej mocy (PSD) przy użyciu metody Welcha (estymator nieparametryczny), co pozwala na redukcję wariancji szumu w porównaniu do klasycznej transformaty FFT.
+    \item Wyznaczenie cech (Features): 
+    
+    Obliczenie wartości mocy pasm $LF$ i $HF$, całkowitej mocy widma (\textit{Total Power}) oraz wskaźnika balansu autonomicznego $LF/HF$.
+    \item Klasyfikacja: 
+    
+    Zastosowanie algorytmu LDA (Linear Discriminant Analysis) lub SVM (Support Vector Machine) do podziału zbioru na klasy wiekowe.
+\end{enumerate}
+
+\section{Spodziewane wyniki i prezentacja danych}
+W ramach końcowej fazy projektu przewiduje się uzyskanie następujących wyników:
+\begin{itemize}
+    \item Wizualizacja widma:
+    
+    Porównawcze wykresy gęstości widmowej mocy (PSD) dla reprezentatywnych pacjentów z obu grup, obrazujące spadek mocy składowej $HF$ u osób starszych.
+    \item Analiza statystyczna:
+    
+    Zestawienie wartości parametrów $LF$ i $HF$ w formie wykresów.
+    \item Ocena klasyfikatora:
+    
+    Wygenerowanie macierzy pomyłek (\textit{confusion matrix}), pozwalającej na ocenę czułości i swoistości modelu w rozpoznawaniu wieku pacjentów.
+    \item Wnioski:
+    
+    Potwierdzenie hipotezy o spadku aktywności przywspółczulnej (składowa $HF$) wraz z wiekiem.
+\end{itemize}
+
+\end{document}
