@@ -9,9 +9,14 @@ clear all; close all; clc;
 
 %% 1. Definicja rekordów
 young_ids   = {'f1y01','f1y02','f1y03','f1y04','f1y05', ...
-               'f1y06','f1y07','f1y08','f1y09','f1y10'};
+               'f1y06','f1y07','f1y08','f1y09','f1y10', ...
+               'f2y01','f2y02','f2y03','f2y04','f2y05', ...
+               'f2y06','f2y07','f2y08','f2y09','f2y10'};
+
 elderly_ids = {'f1o01','f1o02','f1o03','f1o04','f1o05', ...
-               'f1o06','f1o07','f1o08','f1o09','f1o10'};
+               'f1o06','f1o07','f1o08','f1o09','f1o10', ...
+               'f2o01','f2o02','f2o03','f2o04','f2o05', ...
+               'f2o06','f2o07','f2o08','f2o09','f2o10'};
 
 db_path = 'fantasia-database-1.0.0/';  % <-- dostosuj jeśli trzeba
 
@@ -27,7 +32,7 @@ fprintf('\nWczytano %d rekordów young + %d elderly.\n', ...
 
 %% 3. Podział train / test (hold-out 80/20, stratyfikowany)
 rng(42);
-cv = cvpartition(Y, 'HoldOut', 0.2, 'Stratify', true);
+cv = cvpartition(Y, 'HoldOut', 0.4, 'Stratify', true);
 X_train = X(training(cv), :);   Y_train = Y(training(cv));
 X_test  = X(test(cv), :);       Y_test  = Y(test(cv));
 
