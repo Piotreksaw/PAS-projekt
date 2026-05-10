@@ -83,8 +83,7 @@ for r = 1:2
 
     xlabel('Czas [s]');
     ylabel('Amplituda [mV]');
-    title(['Sygnał EKG – ', records(r).label, ...
-           sprintf('   (fs = %d Hz)', records(r).fs)]);
+    title(['Sygnał EKG – ', records(r).label,sprintf(' ', records(r).fs)]);
     legend('EKG', 'Załamki R', 'Location','northeast');
     xlim([0 t_window]);
     grid on;

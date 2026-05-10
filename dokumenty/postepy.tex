@@ -61,7 +61,6 @@ W ramach bieżącego etapu projektu zrealizowano następujące zadania:
     \item Wyznaczenie odstępów RR oraz ich reprezentacji czasowej.
     \item Implementacja i porównanie dwóch metod estymacji widma mocy: FFT oraz Welch.
     \item Wyznaczenie parametrów częstotliwościowych: $LF$, $HF$ oraz $LF/HF$.
-    \item Przygotowanie zbioru cech do klasyfikacji.
 \end{itemize}
 
 % =========================================================
@@ -70,7 +69,7 @@ W ramach bieżącego etapu projektu zrealizowano następujące zadania:
 
 \subsection{WFDB Toolbox for MATLAB}
 
-Dane z bazy \textit{Fantasia Database} przechowywane są w formacie WFDB (\textit{WaveForm DataBase}) -- własnym formacie binarnym platformy PhysioNet, który nie jest natywnie obsługiwany przez środowisko MATLAB. W celu umożliwienia odczytu tych danych zainstalowano pakiet \textbf{WFDB Toolbox for MATLAB}, dostępny bezpłatnie na stronie \texttt{physionet.org}.
+Dane z bazy \textit{Fantasia Database} przechowywane są w formacie WFDB (\textit{WaveForm DataBase}) -- własnym formacie binarnym platformy PhysioNet, który nie jest natywnie obsługiwany przez środowisko MATLAB. W celu umożliwienia odczytu tych danych zainstalowano pakiet \textbf{WFDB Toolbox for MATLAB}, dostępny do pobrania na stronie \texttt{physionet.org}.
 
 Pakiet dostarcza dwie kluczowe funkcje wykorzystywane w projekcie:
 
@@ -202,7 +201,7 @@ Analiza została przeprowadzona w środowisku MATLAB. Proces obliczeniowy dla ka
 
 \subsection{Wybór metody}
 
-Na podstawie przeprowadzonego porównania do dalszej analizy wybrano \textbf{metodę Welcha}. Z następujących powodów:
+Na podstawie przeprowadzonego porównania do dalszej analizy wybrano metodę Welch. Z następujących powodów:
 
 \begin{itemize}
     \item Nagrania trwają 120 minut -- sygnał RR jest silnie niestacjonarny (zmieniają się fazy czuwania i snu), dlatego stabilność estymatora jest ważniejsza niż rozdzielczość.
