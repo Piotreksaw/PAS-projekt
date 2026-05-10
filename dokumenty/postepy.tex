@@ -98,21 +98,7 @@ Każde nagranie trwa \textbf{120 minut} i zostało zarejestrowane podczas ogląd
 
 \subsection{Struktura plików}
 
-Każdy rekord w bazie składa się z trzech plików o różnych rozszerzeniach, pełniących odmienne funkcje:
-
-\begin{table}[H]
-\centering
-\caption{Rodzaje plików wchodzących w skład bazy Fantasia Database}
-\begin{tabular}{@{}cll@{}}
-\toprule
-\textbf{Rozszerzenie} & \textbf{Zawartość} & \textbf{Wykorzystanie w projekcie} \\
-\midrule
-\texttt{.dat} & Próbki sygnału EKG (format binarny) & Wczytanie przez \texttt{rdsamp} \\
-\texttt{.hea} & Nagłówek: $f_s$, liczba kanałów, czas trwania & Automatycznie przez \texttt{rdsamp} \\
-\texttt{.ecg} & Adnotacje: pozycje załamków R & Wczytanie przez \texttt{rdann} \\
-\bottomrule
-\end{tabular}
-\end{table}
+Każdy rekord w bazie Fantasia Database składa się z trzech plików. Plik .dat zawiera próbki sygnału EKG w formacie binarnym i jest wczytywany przez funkcję rdsamp. Plik .hea to nagłówek przechowujący informacje o częstotliwości próbkowania, liczbie kanałów i czasie trwania nagrania - odczytywany jest automatycznie przy wywołaniu rdsamp. Plik .ecg zawiera adnotacje ekspertów, czyli pozycje załamków R, i jest wczytywany osobno przez funkcję rdann.
 
 \subsection{Konwencja nazw rekordów}
 
@@ -122,7 +108,7 @@ Nazwy rekordów zakodowane są w następujący sposób:
 \texttt{f\{seria\}\{grupa\}\{numer\}}
 \end{center}
 
-gdzie seria przyjmuje wartości \texttt{1} lub \texttt{2}, grupa to \texttt{y} (young) lub \texttt{o} (old/elderly), a numer to dwucyfrowy identyfikator pacjenta od \texttt{01} do \texttt{10}. Przykładowo rekord \texttt{f1y01} oznacza serię~1, grupę young, pacjent~1, natomiast \texttt{f2o05} to seria~2, grupa elderly, pacjent~5.
+gdzie seria przyjmuje wartości \texttt{1} lub \texttt{2}, grupa to \texttt{y} (young) lub \texttt{o} (old/elderly), a numer to dwucyfrowy identyfikator pacjenta od \texttt{01} do \texttt{10}.
 
 % =========================================================
 
@@ -148,7 +134,7 @@ Analiza została przeprowadzona w środowisku MATLAB. Proces obliczeniowy dla ka
     Przed estymacją widma zastosowano funkcję \texttt{detrend} w celu usunięcia wolnozmiennego trendu (składowej stałej i liniowej), który mógłby zaburzać wyniki w paśmie LF.
 
     \item \textbf{Estymacja widma mocy.}
-    Gęstość widmowa mocy (PSD) wyznaczona została dwiema metodami -- FFT oraz Welch -- których porównanie opisano w sekcji~\ref{sec:porownanie}.
+    Gęstość widmowa mocy (PSD) wyznaczona została dwiema metodami -- FFT oraz Welch -- których porównanie opisano w kolejnej sekcji.
 
     \item \textbf{Wyznaczenie mocy w pasmach.}
     Moc w pasmach LF i HF obliczono metodą trapezów (\texttt{trapz}):
@@ -172,32 +158,16 @@ Analiza została przeprowadzona w środowisku MATLAB. Proces obliczeniowy dla ka
 
 \subsection{Opis metod}
 
-\textbf{FFT (periodogram)} wyznacza widmo z całego sygnału jednocześnie przy użyciu okna Hanna (w celu redukcji przecieku widmowego). Metoda charakteryzuje się wysoką rozdzielczością częstotliwościową, lecz wysoką wariancją estymatora -- widmo jest nieregularne i wrażliwe na artefakty.
+\textbf{FFT} wyznacza widmo z całego sygnału jednocześnie przy użyciu okna Hanna (w celu redukcji przecieku widmowego). Metoda charakteryzuje się wysoką rozdzielczością częstotliwościową, lecz wysoką wariancją estymatora -- widmo jest nieregularne i wrażliwe na artefakty.
 
 \textbf{Metoda Welcha} dzieli sygnał na nakładające się segmenty, oblicza widmo każdego z nich, a następnie uśrednia wyniki. Dzięki temu wariancja estymatora jest istotnie mniejsza kosztem nieznacznego obniżenia rozdzielczości częstotliwościowej.
-
-\subsection{Implementacja w MATLAB}
-
-\begin{lstlisting}[style=matlab, caption={Estymacja PSD metodą FFT}]
-N   = length(RR_interp);
-win = hann(N)';
-X   = fft(RR_interp .* win);
-PSD = (1/(fs*N)) * abs(X).^2;
-PSD = PSD(1:floor(N/2)+1);
-PSD(2:end-1) = 2 * PSD(2:end-1);   % widmo jednostronne
-f   = (0:floor(N/2)) * fs / N;
-\end{lstlisting}
-
-\begin{lstlisting}[style=matlab, caption={Estymacja PSD metodą Welcha}]
-[PSD, f] = pwelch(RR_interp, [], [], [], fs);
-\end{lstlisting}
 
 \subsection{Wyniki porównania}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{../wykresy/wykres_ekg_rpeaks.pdf}
-\caption{Fragment sygnału EKG (pierwsze 30~s) z zaznaczonymi załamkami R dla rekordu \texttt{f1y01} (young) oraz \texttt{f1o01} (elderly).}
+\caption{Fragment sygnału EKG (pierwsze 60~s) z zaznaczonymi załamkami R dla rekordu \texttt{f1y01} (young) oraz \texttt{f1o01} (elderly).}
 \end{figure}
 
 \begin{figure}[H]
@@ -212,15 +182,32 @@ f   = (0:floor(N/2)) * fs / N;
 \caption{Porównanie widm HRV wyznaczonych metodą FFT i Welcha dla rekordu \texttt{f1o01} (elderly).}
 \end{figure}
 
+\begin{table}[H]
+\centering
+\caption{Porównanie wartości parametrów HRV wyznaczonych metodą FFT i Welcha}
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+\textbf{Rekord} & \textbf{Metoda} & \textbf{LF [s²/Hz]} & \textbf{HF [s²/Hz]} & \textbf{LF/HF} \\
+\hline
+\texttt{f1y01} (Young) & FFT   & 0.0006 & 0.0014 & 0.4500 \\
+\hline
+\texttt{f1y01} (Young) & Welch & 0.0016 & 0.0035 & 0.4542 \\
+\hline
+\texttt{f1o01} (Elderly) & FFT   & 0.0001 & 0.0000 & 5.5170 \\
+\hline
+\texttt{f1o01} (Elderly) & Welch & 0.0003 & 0.0001 & 5.4619 \\
+\hline
+\end{tabular}
+\end{table}
+
 \subsection{Wybór metody}
 
-Na podstawie przeprowadzonego porównania do dalszej analizy wybrano \textbf{metodę Welcha}. Uzasadnienie wyboru:
+Na podstawie przeprowadzonego porównania do dalszej analizy wybrano \textbf{metodę Welcha}. Z następujących powodów:
 
 \begin{itemize}
     \item Nagrania trwają 120 minut -- sygnał RR jest silnie niestacjonarny (zmieniają się fazy czuwania i snu), dlatego stabilność estymatora jest ważniejsza niż rozdzielczość.
     \item Metoda Welcha daje gładkie, powtarzalne widmo, co przekłada się na stabilniejsze wartości parametrów LF, HF i $LF/HF$ -- kluczowe dla klasyfikatora SVM.
-    \item Periodogram FFT jest wrażliwy na artefakty ruchowe i ektopowe uderzenia serca, które mogą wystąpić podczas tak długich nagrań.
-    \item Metoda Welcha jest standardem w analizie HRV rekomendowanym przez \textit{Task Force} (European Society of Cardiology, 1996).
+    \item FFT jest wrażliwe  na artefakty ruchowe i ektopowe uderzenia serca, które mogą wystąpić podczas tak długich nagrań.
 \end{itemize}
 
 % =========================================================
@@ -237,52 +224,18 @@ Uzyskane wyniki wskazują na wyraźne różnice pomiędzy grupami:
 
 % =========================================================
 
-\section{Klasyfikacja}
-
-Zaimplementowano klasyfikator SVM z jądrem RBF (\textit{Radial Basis Function}).
-
-\begin{itemize}
-    \item Podział danych: 80\% trening, 20\% test
-    \item Standaryzacja cech metodą Z-score (parametry wyznaczone na zbiorze treningowym)
-    \item Cechy wejściowe: $[LF,\ HF,\ LF/HF]$
-\end{itemize}
-
-Wstępna skuteczność klasyfikacji wynosi:
-
-\[
-    Accuracy \approx XX\%
-\]
-
-% =========================================================
-
-\section{Problemy napotkane podczas realizacji}
-
-W trakcie prac napotkano następujące trudności:
-
-\begin{itemize}
-    \item Błędna konwencja nazw plików elderly w bazie -- rekordy oznaczone są literą \texttt{o} (od \textit{old}), a nie \texttt{e} (od \textit{elderly}), co początkowo uniemożliwiało ich wczytanie.
-    \item Konieczność odpowiedniej normalizacji danych przed klasyfikacją -- bez standaryzacji SVM z jądrem RBF dawał istotnie gorsze wyniki.
-    \item Wrażliwość wyników FFT na artefakty w długich nagraniach -- potwierdziła potrzebę wyboru metody Welcha.
-\end{itemize}
-
-% =========================================================
-
 \section{Plan dalszych prac}
 
-W kolejnych etapach planuje się:
+Kolejny etap projektu obejmuje implementację klasyfikatora rozróżniającego grupy wiekowe na podstawie wyznaczonych parametrów HRV. Jako cechy wejściowe klasyfikatora wykorzystane zostaną wartości $LF$, $HF$ oraz $LF/HF$ wyznaczone metodą Welcha dla wszystkich 40 rekordów bazy Fantasia Database.
+
+Planuje się przetestowanie i porównanie dwóch klasyfikatorów:
 
 \begin{itemize}
-    \item Wprowadzenie analizy segmentowej (segmenty 5-minutowe) zamiast całego nagrania -- zgodnie ze standardem \textit{Task Force} dla krótkoterminowej analizy HRV.
-    \item Rozszerzenie zbioru cech o parametry dziedziny czasu: SDNN, RMSSD.
-    \item Optymalizację hiperparametrów klasyfikatora (grid search po $C$ i $\gamma$).
-    \item Zastąpienie podziału hold-out walidacją \textit{Repeated 10-fold cross-validation} z testem statystycznym (paired t-test) w celu wiarygodnego porównania metod FFT i Welch.
-    \item Analizę statystyczną różnic między grupami (test Manna-Whitneya).
+    \item \textbf{SVM} (\textit{Support Vector Machine}) z jądrem RBF -- klasyfikator wyznaczający hiperpłaszczyznę maksymalnego marginesu w przestrzeni cech; szczególnie skuteczny przy małych zbiorach danych i nieliniowo separowalnych klasach.
+    \item \textbf{LDA} (\textit{Linear Discriminant Analysis}) -- klasyfikator liniowy oparty na analizie dyskryminacyjnej; zakłada normalność rozkładów i jednakowe macierze kowariancji klas, w zamian oferując prostą interpretowalność wyników.
 \end{itemize}
 
-% =========================================================
-
-\section{Wnioski}
-
-Dotychczasowe wyniki potwierdzają, że analiza widmowa HRV stanowi skuteczne narzędzie do rozróżniania grup wiekowych. Obserwowany spadek składowej $HF$ u osób starszych jest zgodny z literaturą i wynika z osłabienia układu przywspółczulnego wraz z wiekiem. Spośród dwóch testowanych metod estymacji widma -- FFT i Welch -- wybrano metodę Welcha jako stabilniejszą i bardziej odpowiednią dla długich, niestacjonarnych sygnałów biologicznych.
+Obydwa modele zostaną ocenione przy użyciu \textit{repeated 10-fold cross-validation} (10 powtórzeń), co przy zbiorze 40 rekordów zapewni wiarygodną i stabilną ocenę skuteczności. 
+Metoda oceny skuteczności klasyfikatorów oraz sposób prezentacji wyników zostaną określone w kolejnym etapie prac, po przeprowadzeniu wstępnych eksperymentów klasyfikacyjnych.
 
 \end{document}

@@ -90,43 +90,35 @@ for r = 1:2
     grid on;
 end
 
-sgtitle('Fragment sygnału EKG z zaznaczonymi załamkami R (pierwsze 30 s)');
+sgtitle('Fragment sygnału EKG z zaznaczonymi załamkami R');
 save_pdf(fig1, fullfile(out_dir, 'wykres_ekg_rpeaks.pdf'));
 
-%% =========================================================
-%  WYKRES 2: Porównanie widm FFT vs Welch – young
-% =========================================================
+%% Porownanie FFT z Welch na przykladzie young
 fig2 = figure('Name','FFT vs Welch – young', ...
     'Units','centimeters','Position',[1 1 24 9]);
 
 subplot(1,2,1);
 plot_spectrum(records(1).f_fft, records(1).psd_fft, ...
-    'FFT (periodogram)', records(1).color);
-add_params_text(records(1).LF_f, records(1).HF_f, records(1).LFHF_f);
+    'FFT', records(1).color);
 
 subplot(1,2,2);
 plot_spectrum(records(1).f_welch, records(1).psd_welch, ...
     'Welch', records(1).color);
-add_params_text(records(1).LF_w, records(1).HF_w, records(1).LFHF_w);
 
 sgtitle(['Porównanie metod PSD – ', records(1).label]);
 save_pdf(fig2, fullfile(out_dir, 'wykres_widmo_young.pdf'));
 
-%% =========================================================
-%  WYKRES 3: Porównanie widm FFT vs Welch – elderly
-% =========================================================
+%% Porownanie FFT z Welch na przykladzie eldery
 fig3 = figure('Name','FFT vs Welch – elderly', ...
     'Units','centimeters','Position',[1 1 24 9]);
 
 subplot(1,2,1);
 plot_spectrum(records(2).f_fft, records(2).psd_fft, ...
-    'FFT (periodogram)', records(2).color);
-add_params_text(records(2).LF_f, records(2).HF_f, records(2).LFHF_f);
+    'FFT', records(2).color);
 
 subplot(1,2,2);
 plot_spectrum(records(2).f_welch, records(2).psd_welch, ...
     'Welch', records(2).color);
-add_params_text(records(2).LF_w, records(2).HF_w, records(2).LFHF_w);
 
 sgtitle(['Porównanie metod PSD – ', records(2).label]);
 save_pdf(fig3, fullfile(out_dir, 'wykres_widmo_elderly.pdf'));
@@ -142,9 +134,7 @@ for r = 1:2
         records(r).id, 'Welch', records(r).LF_w, records(r).HF_w, records(r).LFHF_w);
     fprintf('%s\n', repmat('-',1,44));
 end
-%% =========================================================
-%  FUNKCJE LOKALNE
-% =========================================================
+%% Lokalne funkcje
 
 function [LF, HF, LF_HF, f, PSD] = compute_psd_fft(RR_interp, fs)
     N   = length(RR_interp);
