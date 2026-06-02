@@ -1,0 +1,240 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[polish]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{subfigure}
+\usepackage{booktabs}
+\usepackage{array}
+
+\geometry{margin=2.5cm}
+
+% Styl dla kodu MATLAB
+\lstdefinestyle{matlab}{
+    language=Matlab,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue}\bfseries,
+    commentstyle=\color{gray}\itshape,
+    stringstyle=\color{orange},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    numbersep=8pt,
+    frame=single,
+    breaklines=true,
+    backgroundcolor=\color{gray!8},
+    captionpos=b
+}
+
+\title{
+\Large Zaawansowane metody przetwarzania i analizy sygnałów \\[6pt]
+\textbf{Raport z postępów – Analiza HRV i klasyfikacja grup wiekowych}
+}
+
+\author{Piotr Sawicki 319003, Michał Odziemkowski 311267}
+\date{Maj 2026}
+
+\begin{document}
+
+\maketitle
+
+% =========================================================
+
+\section{Cel projektu}
+Głównym celem niniejszego projektu jest przeprowadzenie zaawansowanej analizy częstotliwościowej sygnału zmienności rytmu zatokowego (ang. \textit{Heart Rate Variability} – HRV)~. Projekt zakłada identyfikację istotnych statystycznie różnic w parametrach widmowych pomiędzy osobami młodymi a seniorami. Efektem końcowym ma być stworzenie stabilnego modelu klasyfikacyjnego, zdolnego do automatycznego rozróżniania grup wiekowych na podstawie cech wyekstrahowanych z sygnału EKG.
+
+
+\section{Zakres wykonanych prac}
+
+W ramach bieżącego etapu projektu zrealizowano następujące zadania:
+
+\begin{itemize}
+    \item Instalacja pakietu \textit{WFDB Toolbox for MATLAB} umożliwiającego wczytywanie danych z bazy PhysioNet.
+    \item Zapoznanie się ze strukturą bazy \textit{Fantasia Database} oraz formatem przechowywanych plików.
+    \item Wczytanie danych z bazy przy użyciu funkcji \texttt{rdsamp} oraz \texttt{rdann}.
+    \item Ekstrakcja sygnału EKG oraz detekcja załamków R.
+    \item Wyznaczenie odstępów RR oraz ich reprezentacji czasowej.
+    \item Implementacja i porównanie dwóch metod estymacji widma mocy: FFT oraz Welch.
+    \item Wyznaczenie parametrów częstotliwościowych: $LF$, $HF$ oraz $LF/HF$.
+\end{itemize}
+
+% =========================================================
+
+\section{Środowisko i narzędzia}
+
+\subsection{WFDB Toolbox for MATLAB}
+
+Dane z bazy \textit{Fantasia Database} przechowywane są w formacie WFDB (\textit{WaveForm DataBase}) -- własnym formacie binarnym platformy PhysioNet, który nie jest natywnie obsługiwany przez środowisko MATLAB. W celu umożliwienia odczytu tych danych zainstalowano pakiet \textbf{WFDB Toolbox for MATLAB}, dostępny do pobrania na stronie \texttt{physionet.org}.
+
+Pakiet dostarcza dwie kluczowe funkcje wykorzystywane w projekcie:
+
+\begin{itemize}
+    \item \texttt{rdsamp} - wczytuje próbki sygnału fizjologicznego (EKG) z pliku binarnego \texttt{.dat} wraz z częstotliwością próbkowania odczytaną z nagłówka \texttt{.hea}:
+
+    \item \texttt{rdann} - wczytuje adnotacje ekspertów z pliku \texttt{.ecg}, zawierające numery próbek odpowiadające pozycjom załamków R:
+
+\end{itemize}
+
+% =========================================================
+
+\section{Baza danych Fantasia Database}
+
+\subsection{Opis bazy}
+
+Baza \textit{Fantasia Database} udostępniona jest na platformie PhysioNet i zawiera długoterminowe nagrania sygnałów fizjologicznych wykonane u zdrowych ochotników w dwóch grupach wiekowych:
+
+\begin{itemize}
+    \item \textbf{Young} -- 20 młodych osób (wiek 21--34 lat),
+    \item \textbf{Elderly} -- 20 starszych osób (wiek 68--85 lat).
+\end{itemize}
+
+Każde nagranie trwa \textbf{120 minut} i zostało zarejestrowane podczas oglądania przez badanego wybranego filmu fantasy. Baza zawiera łącznie \textbf{40 rekordów}.
+
+\subsection{Struktura plików}
+
+Każdy rekord w bazie Fantasia Database składa się z trzech plików. Plik .dat zawiera próbki sygnału EKG w formacie binarnym i jest wczytywany przez funkcję rdsamp. Plik .hea to nagłówek przechowujący informacje o częstotliwości próbkowania, liczbie kanałów i czasie trwania nagrania - odczytywany jest automatycznie przy wywołaniu rdsamp. Plik .ecg zawiera adnotacje ekspertów, czyli pozycje załamków R, i jest wczytywany osobno przez funkcję rdann.
+
+\subsection{Konwencja nazw rekordów}
+
+Nazwy rekordów zakodowane są w następujący sposób:
+
+\begin{center}
+\texttt{f\{seria\}\{grupa\}\{numer\}}
+\end{center}
+
+gdzie seria przyjmuje wartości \texttt{1} lub \texttt{2}, grupa to \texttt{y} (young) lub \texttt{o} (old/elderly), a numer to dwucyfrowy identyfikator pacjenta od \texttt{01} do \texttt{10}.
+
+% =========================================================
+
+\section{Implementacja}
+
+Analiza została przeprowadzona w środowisku MATLAB. Proces obliczeniowy dla każdego rekordu przebiega według następujących kroków:
+
+\begin{enumerate}
+
+    \item \textbf{Wyznaczenie odstępów RR.}
+    Odstępy RR obliczono jako różnice czasów kolejnych załamków R:
+    \[
+        RR_i = t_{i+1} - t_i \quad [s]
+    \]
+
+    \item \textbf{Interpolacja sygnału RR.}
+    Sygnał RR jest nierównomiernie próbkowany (każdy odstęp ma inną długość), dlatego przed analizą widmową dokonano interpolacji metodą \textit{spline} do równomiernej siatki czasowej o częstotliwości $f_s = 4$~Hz. Wartość ta zapewnia spełnienie twierdzenia Nyquista dla składowej HF ($f_{max} = 0{,}4$~Hz):
+    \[
+        f_s = 4 \text{ Hz} > 2 \cdot f_{max} = 0{,}8 \text{ Hz}
+    \]
+
+    \item \textbf{Usunięcie trendu.}
+    Przed estymacją widma zastosowano funkcję \texttt{detrend} w celu usunięcia wolnozmiennego trendu (składowej stałej i liniowej), który mógłby zaburzać wyniki w paśmie LF.
+
+    \item \textbf{Estymacja widma mocy.}
+    Gęstość widmowa mocy (PSD) wyznaczona została dwiema metodami -- FFT oraz Welch -- których porównanie opisano w kolejnej sekcji.
+
+    \item \textbf{Wyznaczenie mocy w pasmach.}
+    Moc w pasmach LF i HF obliczono metodą trapezów (\texttt{trapz}):
+    \[
+        LF = \int_{0{,}04}^{0{,}15} PSD(f)\,df, \qquad
+        HF = \int_{0{,}15}^{0{,}40} PSD(f)\,df
+    \]
+
+    \item \textbf{Obliczenie wskaźnika $LF/HF$.}
+    \[
+        \frac{LF}{HF}
+    \]
+    Wskaźnik ten odzwierciedla równowagę pomiędzy układem współczulnym (LF) a przywspółczulnym (HF).
+
+\end{enumerate}
+
+% =========================================================
+
+\section{Porównanie metod estymacji PSD: FFT vs Welch}
+\label{sec:porownanie}
+
+\subsection{Opis metod}
+
+\textbf{FFT} wyznacza widmo z całego sygnału jednocześnie przy użyciu okna Hanna (w celu redukcji przecieku widmowego). Metoda charakteryzuje się wysoką rozdzielczością częstotliwościową, lecz wysoką wariancją estymatora -- widmo jest nieregularne i wrażliwe na artefakty.
+
+\textbf{Metoda Welcha} dzieli sygnał na nakładające się segmenty, oblicza widmo każdego z nich, a następnie uśrednia wyniki. Dzięki temu wariancja estymatora jest istotnie mniejsza kosztem nieznacznego obniżenia rozdzielczości częstotliwościowej.
+
+\subsection{Wyniki porównania}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{../wykresy/wykres_ekg_rpeaks.pdf}
+\caption{Fragment sygnału EKG (pierwsze 60~s) z zaznaczonymi załamkami R dla rekordu \texttt{f1y01} (young) oraz \texttt{f1o01} (elderly).}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{../wykresy/wykres_widmo_young.pdf}
+\caption{Porównanie widm HRV wyznaczonych metodą FFT i Welcha dla rekordu \texttt{f1y01} (young). Kolorem niebieskim zaznaczono pasmo LF (0{,}04--0{,}15~Hz), czerwonym pasmo HF (0{,}15--0{,}40~Hz).}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{../wykresy/wykres_widmo_elderly.pdf}
+\caption{Porównanie widm HRV wyznaczonych metodą FFT i Welcha dla rekordu \texttt{f1o01} (elderly).}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Porównanie wartości parametrów HRV wyznaczonych metodą FFT i Welcha}
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+\textbf{Rekord} & \textbf{Metoda} & \textbf{LF [s²/Hz]} & \textbf{HF [s²/Hz]} & \textbf{LF/HF} \\
+\hline
+\texttt{f1y01} (Young) & FFT   & 0.0006 & 0.0014 & 0.4500 \\
+\hline
+\texttt{f1y01} (Young) & Welch & 0.0016 & 0.0035 & 0.4542 \\
+\hline
+\texttt{f1o01} (Elderly) & FFT   & 0.0001 & 0.0000 & 5.5170 \\
+\hline
+\texttt{f1o01} (Elderly) & Welch & 0.0003 & 0.0001 & 5.4619 \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Wybór metody}
+
+Na podstawie przeprowadzonego porównania do dalszej analizy wybrano metodę Welch. Z następujących powodów:
+
+\begin{itemize}
+    \item Nagrania trwają 120 minut -- sygnał RR jest silnie niestacjonarny (zmieniają się fazy czuwania i snu), dlatego stabilność estymatora jest ważniejsza niż rozdzielczość.
+    \item Metoda Welcha daje gładkie, powtarzalne widmo, co przekłada się na stabilniejsze wartości parametrów LF, HF i $LF/HF$ -- kluczowe dla klasyfikatora SVM.
+    \item FFT jest wrażliwe  na artefakty ruchowe i ektopowe uderzenia serca, które mogą wystąpić podczas tak długich nagrań.
+\end{itemize}
+
+% =========================================================
+
+\section{Wyniki wstępne}
+
+Uzyskane wyniki wskazują na wyraźne różnice pomiędzy grupami:
+
+\begin{itemize}
+    \item Wyraźnie większą składową wysokoczęstotliwościową ($HF$) w grupie młodych, co świadczy o silniejszej aktywności układu przywspółczulnego.
+    \item Dominację składowych niskoczęstotliwościowych ($LF$) u osób starszych.
+    \item Wyższy wskaźnik $LF/HF$ w grupie elderly, zgodny z literaturą medyczną opisującą osłabienie regulacji przywspółczulnej wraz z wiekiem.
+\end{itemize}
+
+% =========================================================
+
+\section{Plan dalszych prac}
+
+Kolejny etap projektu obejmuje implementację klasyfikatora rozróżniającego grupy wiekowe na podstawie wyznaczonych parametrów HRV. Jako cechy wejściowe klasyfikatora wykorzystane zostaną wartości $LF$, $HF$ oraz $LF/HF$ wyznaczone metodą Welcha dla wszystkich 40 rekordów bazy Fantasia Database.
+
+Planuje się przetestowanie i porównanie dwóch klasyfikatorów:
+
+\begin{itemize}
+    \item \textbf{SVM} (\textit{Support Vector Machine}) z jądrem RBF -- klasyfikator wyznaczający hiperpłaszczyznę maksymalnego marginesu w przestrzeni cech; szczególnie skuteczny przy małych zbiorach danych i nieliniowo separowalnych klasach.
+    \item \textbf{LDA} (\textit{Linear Discriminant Analysis}) -- klasyfikator liniowy oparty na analizie dyskryminacyjnej; zakłada normalność rozkładów i jednakowe macierze kowariancji klas, w zamian oferując prostą interpretowalność wyników.
+\end{itemize}
+
+Obydwa modele zostaną ocenione przy użyciu \textit{repeated 10-fold cross-validation} (10 powtórzeń), co przy zbiorze 40 rekordów zapewni wiarygodną i stabilną ocenę skuteczności. 
+Metoda oceny skuteczności klasyfikatorów oraz sposób prezentacji wyników zostaną określone w kolejnym etapie prac, po przeprowadzeniu wstępnych eksperymentów klasyfikacyjnych.
+
+\end{document}

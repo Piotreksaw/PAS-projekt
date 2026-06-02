@@ -1,10 +1,8 @@
 clear all; close all; clc;
 
 %% =========================================================
-%  HRV Classification – Fantasia Database
-%  Grupy: young (f1y01–f1y10) vs elderly (f1e01–f1e10)
-%  Cechy: LF, HF, LF/HF
-%  Klasyfikator: SVM (fitcsvm)
+%  HRV Classification – Fantasia Database (Rozszerzenie)
+%  Porównanie SVM vs LDA przy użyciu Repeated 10-Fold CV
 % =========================================================
 
 %% 1. Definicja rekordów
@@ -18,7 +16,7 @@ elderly_ids = {'f1o01','f1o02','f1o03','f1o04','f1o05', ...
                'f2o01','f2o02','f2o03','f2o04','f2o05', ...
                'f2o06','f2o07','f2o08','f2o09','f2o10'};
 
-db_path = 'fantasia-database-1.0.0/';  % <-- dostosuj jeśli trzeba
+db_path = 'fantasia-database-1.0.0/';  
 
 %% 2. Ekstrakcja cech HRV
 [features_young,   labels_young]   = extract_features(young_ids,   'young',   db_path);
@@ -27,48 +25,101 @@ db_path = 'fantasia-database-1.0.0/';  % <-- dostosuj jeśli trzeba
 X = [features_young;   features_elderly];   % macierz cech [N x 3]
 Y = [labels_young;     labels_elderly];     % etykiety (categorical)
 
-fprintf('\nWczytano %d rekordów young + %d elderly.\n', ...
-    height(features_young), height(features_elderly));
+classes = categories(Y); % {'elderly', 'young'}
 
-%% 3. Podział train / test (hold-out 80/20, stratyfikowany)
-rng(42);
-cv = cvpartition(Y, 'HoldOut', 0.4, 'Stratify', true);
-X_train = X(training(cv), :);   Y_train = Y(training(cv));
-X_test  = X(test(cv), :);       Y_test  = Y(test(cv));
+%% 3. Konfiguracja Walidacji Krzyżowej (Repeated 10-Fold CV)
+K = 10;          % liczba foldów
+R = 10;          % liczba powtórzeń (uwiarygodnia wynik)
+num_samples = height(X);
 
-%% 4. Standaryzacja cech (ważne dla SVM!)
-mu    = mean(X_train);
-sigma = std(X_train);
-X_train_z = (X_train - mu) ./ sigma;
-X_test_z  = (X_test  - mu) ./ sigma;
+% Zmienne na predykcje i prawdziwe etykiety ze wszystkich powtórzeń
+all_Y_test_SVM = [];
+all_Y_pred_SVM = [];
 
-%% 5. Trening SVM (jądro RBF)
-svm_model = fitcsvm(X_train_z, Y_train, ...
-    'KernelFunction', 'rbf', ...
-    'BoxConstraint',  1, ...
-    'KernelScale',    'auto', ...
-    'Standardize',    false, ...   % już znormalizowane ręcznie
-    'ClassNames',     categorical({'young','elderly'}));
+all_Y_test_LDA = [];
+all_Y_pred_LDA = [];
 
-%% 6. Predykcja i ocena
-Y_pred = predict(svm_model, X_test_z);
+rng(42); % Powtarzalność losowania foldów
 
-acc = mean(Y_pred == Y_test) * 100;
-fprintf('\n=== Wyniki klasyfikacji SVM ===\n');
-fprintf('Accuracy: %.1f%%\n', acc);
+for r = 1:R
+    % Stratyfikowany podział na 10 foldów
+    cv = cvpartition(Y, 'KFold', K, 'Stratify', true);
+    
+    for k = 1:K
+        % Indeksy podziału
+        train_idx = training(cv, k);
+        test_idx  = test(cv, k);
+        
+        X_train = X(train_idx, :);   Y_train = Y(train_idx);
+        X_test  = X(test_idx, :);     Y_test  = Y(test_idx);
+        
+        %% Standaryzacja cech (liczona WYŁĄCZNIE na zbiorze treningowym danego folda!)
+        mu    = mean(X_train);
+        sigma = std(X_train);
+        X_train_z = (X_train - mu) ./ sigma;
+        X_test_z  = (X_test  - mu) ./ sigma;
+        
+        %% --- KLASYFIKATOR 1: SVM (RBF) ---
+        svm_model = fitcsvm(X_train_z, Y_train, ...
+            'KernelFunction', 'rbf', ...
+            'BoxConstraint',  1, ...
+            'KernelScale',    'auto', ...
+            'Standardize',    false, ... 
+            'ClassNames',     classes);
+        
+        Y_pred_svm = predict(svm_model, X_test_z);
+        
+        all_Y_test_SVM = [all_Y_test_SVM; Y_test];
+        all_Y_pred_SVM = [all_Y_pred_SVM; Y_pred_svm];
+        
+        %% --- KLASYFIKATOR 2: LDA (Liniowy) ---
+        lda_model = fitcdiscr(X_train_z, Y_train, ...
+            'DiscrimType',    'linear', ...
+            'ClassNames',     classes);
+            
+        Y_pred_lda = predict(lda_model, X_test_z);
+        
+        all_Y_test_LDA = [all_Y_test_LDA; Y_test];
+        all_Y_pred_LDA = [all_Y_pred_LDA; Y_pred_lda];
+    end
+end
 
-%% 7. Macierz pomyłek
-figure('Name','Macierz pomyłek','Units','centimeters','Position',[2 2 14 11]);
-cm = confusionchart(Y_test, Y_pred, ...
-    'Title',           'Macierz pomyłek – SVM (RBF)', ...
+%% 4. Obliczanie metryk końcowych
+acc_svm = mean(all_Y_pred_SVM == all_Y_test_SVM) * 100;
+acc_lda = mean(all_Y_pred_LDA == all_Y_test_LDA) * 100;
+
+fprintf('\n================ WYNIKI KOŃCOWE (%d-fold CV x %d powtórzeń) ================\n', K, R);
+fprintf('Średnia dokładność SVM (RBF): %.2f%%\n', acc_svm);
+fprintf('Średnia dokładność LDA:       %.2f%%\n', acc_lda);
+fprintf('========================================================================\n');
+
+%% 5. Prezentacja Wyników – Zbiorcze Macierze Pomyłek
+figure('Name','Porównanie Klasyfikatorów','Units','centimeters','Position',[5 5 26 12]);
+
+% --- WYMUSZENIE TYPU CATEGORICAL (To naprawia błąd) ---
+all_Y_test_SVM = categorical(all_Y_test_SVM);
+all_Y_pred_SVM = categorical(all_Y_pred_SVM);
+all_Y_test_LDA = categorical(all_Y_test_LDA);
+all_Y_pred_LDA = categorical(all_Y_pred_LDA);
+
+% Podwykres dla SVM
+subplot(1,2,1);
+cm_svm = confusionchart(all_Y_test_SVM, all_Y_pred_SVM, ...
+    'Title',           'Macierz Pomyłek: SVM (RBF)', ...
     'RowSummary',      'row-normalized', ...
     'ColumnSummary',   'column-normalized');
-cm.FontSize = 12;
+cm_svm.FontSize = 11;
 
-%% 8. Wykresy widm HRV dla przykładowych rekordów
+% Podwykres dla LDA
+subplot(1,2,2);
+cm_lda = confusionchart(all_Y_test_LDA, all_Y_pred_LDA, ...
+    'Title',           'Macierz Pomyłek: LDA', ...
+    'RowSummary',      'row-normalized', ...
+    'ColumnSummary',   'column-normalized');
+cm_lda.FontSize = 11;
+
+%% 6. Wykresy pomocnicze (widmo i przestrzeń cech)
 plot_hrv_spectra(db_path);
-
-%% 9. Wykres cech LF vs HF (scatter)
 plot_features_scatter(features_young, features_elderly);
 
 %% =========================================================
