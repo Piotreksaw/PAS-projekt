@@ -33,11 +33,11 @@
 
 \title{
 \Large Zaawansowane metody przetwarzania i analizy sygnałów \\[6pt]
-\textbf{Raport z postępów – Analiza HRV i klasyfikacja grup wiekowych}
+\textbf{Analiza częstotliwościowa HRV i klasyfikacja grup wiekowych na podstawie bazy Fantasia Database}
 }
 
 \author{Piotr Sawicki 319003, Michał Odziemkowski 311267}
-\date{Maj 2026}
+\date{Czerwiec 2026}
 
 \begin{document}
 
@@ -46,114 +46,100 @@
 % =========================================================
 
 \section{Cel projektu}
-Głównym celem niniejszego projektu jest przeprowadzenie zaawansowanej analizy częstotliwościowej sygnału zmienności rytmu zatokowego (ang. \textit{Heart Rate Variability} – HRV)~. Projekt zakłada identyfikację istotnych statystycznie różnic w parametrach widmowych pomiędzy osobami młodymi a seniorami. Efektem końcowym ma być stworzenie stabilnego modelu klasyfikacyjnego, zdolnego do automatycznego rozróżniania grup wiekowych na podstawie cech wyekstrahowanych z sygnału EKG.
 
+Celem projektu była analiza częstotliwościowa zmienności rytmu serca (ang. \textit{Heart Rate Variability}, HRV) na podstawie zapisów elektrokardiograficznych pochodzących z bazy danych Fantasia Database. Analiza obejmowała wyznaczenie parametrów widmowych LF oraz HF, opisujących aktywność autonomicznego układu nerwowego.
 
-\section{Zakres wykonanych prac}
+Drugim celem pracy było opracowanie modelu klasyfikacyjnego umożliwiającego automatyczne rozróżnianie osób młodych i starszych na podstawie cech wyznaczonych z sygnału HRV. W tym celu zaimplementowano i porównano dwa klasyfikatory: Support Vector Machine (SVM) z jądrem RBF oraz Linear Discriminant Analysis (LDA).
 
-W ramach bieżącego etapu projektu zrealizowano następujące zadania:
-
-\begin{itemize}
-    \item Instalacja pakietu \textit{WFDB Toolbox for MATLAB} umożliwiającego wczytywanie danych z bazy PhysioNet.
-    \item Zapoznanie się ze strukturą bazy \textit{Fantasia Database} oraz formatem przechowywanych plików.
-    \item Wczytanie danych z bazy przy użyciu funkcji \texttt{rdsamp} oraz \texttt{rdann}.
-    \item Ekstrakcja sygnału EKG oraz detekcja załamków R.
-    \item Wyznaczenie odstępów RR oraz ich reprezentacji czasowej.
-    \item Implementacja i porównanie dwóch metod estymacji widma mocy: FFT oraz Welch.
-    \item Wyznaczenie parametrów częstotliwościowych: $LF$, $HF$ oraz $LF/HF$.
-\end{itemize}
+W celu zwiększenia liczby próbek uczących zastosowano segmentację 120-minutowych nagrań na niezależne okna 5-minutowe, zgodnie z zaleceniami dotyczącymi krótkoterminowej analizy HRV.
 
 % =========================================================
 
-\section{Środowisko i narzędzia}
+\section{Metodyka badań}
 
-\subsection{WFDB Toolbox for MATLAB}
+W celu realizacji założeń projektu opracowano kompletny łańcuch przetwarzania danych obejmujący ekstrakcję sygnału HRV, wyznaczenie parametrów częstotliwościowych oraz klasyfikację grup wiekowych. Analiza została przeprowadzona w środowisku MATLAB z wykorzystaniem biblioteki WFDB Toolbox umożliwiającej odczyt danych z platformy PhysioNet.
 
-Dane z bazy \textit{Fantasia Database} przechowywane są w formacie WFDB (\textit{WaveForm DataBase}) -- własnym formacie binarnym platformy PhysioNet, który nie jest natywnie obsługiwany przez środowisko MATLAB. W celu umożliwienia odczytu tych danych zainstalowano pakiet \textbf{WFDB Toolbox for MATLAB}, dostępny do pobrania na stronie \texttt{physionet.org}.
+\subsection{Baza danych}
 
-Pakiet dostarcza dwie kluczowe funkcje wykorzystywane w projekcie:
-
-\begin{itemize}
-    \item \texttt{rdsamp} - wczytuje próbki sygnału fizjologicznego (EKG) z pliku binarnego \texttt{.dat} wraz z częstotliwością próbkowania odczytaną z nagłówka \texttt{.hea}:
-
-    \item \texttt{rdann} - wczytuje adnotacje ekspertów z pliku \texttt{.ecg}, zawierające numery próbek odpowiadające pozycjom załamków R:
-
-\end{itemize}
-
-% =========================================================
-
-\section{Baza danych Fantasia Database}
-
-\subsection{Opis bazy}
-
-Baza \textit{Fantasia Database} udostępniona jest na platformie PhysioNet i zawiera długoterminowe nagrania sygnałów fizjologicznych wykonane u zdrowych ochotników w dwóch grupach wiekowych:
+W badaniach wykorzystano bazę \textit{Fantasia Database} udostępnioną przez platformę PhysioNet. Zbiór zawiera 40 długoterminowych zapisów sygnału EKG zarejestrowanych u zdrowych ochotników podzielonych na dwie grupy wiekowe:
 
 \begin{itemize}
-    \item \textbf{Young} -- 20 młodych osób (wiek 21--34 lat),
-    \item \textbf{Elderly} -- 20 starszych osób (wiek 68--85 lat).
+\item \textbf{Young} – 20 osób w wieku od 21 do 34 lat,
+\item \textbf{Elderly} – 20 osób w wieku od 68 do 85 lat.
 \end{itemize}
 
-Każde nagranie trwa \textbf{120 minut} i zostało zarejestrowane podczas oglądania przez badanego wybranego filmu fantasy. Baza zawiera łącznie \textbf{40 rekordów}.
+Każde nagranie trwa 120 minut i zostało zarejestrowane z częstotliwością próbkowania równą 250 Hz. Oprócz sygnału EKG baza zawiera adnotacje eksperckie określające położenia kolejnych załamków R, co umożliwia bezpośrednie wyznaczenie odstępów RR bez konieczności implementacji własnego algorytmu detekcji.
 
-\subsection{Struktura plików}
+\subsection{Segmentacja sygnału}
 
-Każdy rekord w bazie Fantasia Database składa się z trzech plików. Plik .dat zawiera próbki sygnału EKG w formacie binarnym i jest wczytywany przez funkcję rdsamp. Plik .hea to nagłówek przechowujący informacje o częstotliwości próbkowania, liczbie kanałów i czasie trwania nagrania - odczytywany jest automatycznie przy wywołaniu rdsamp. Plik .ecg zawiera adnotacje ekspertów, czyli pozycje załamków R, i jest wczytywany osobno przez funkcję rdann.
+Ze względu na ograniczoną liczbę dostępnych pacjentów oraz zgodnie z zaleceniami dotyczącymi krótkoterminowej analizy HRV, każde 120-minutowe nagranie podzielono na niezależne segmenty o długości 5 minut (300 s).
+Łącznie wyekstrahowano 937 segmentów pochodzących od 40 pacjentów.
 
-\subsection{Konwencja nazw rekordów}
+Dla każdego segmentu wyznaczano oddzielny zestaw parametrów HRV. Takie podejście pozwoliło znacząco zwiększyć liczbę próbek wykorzystywanych podczas procesu uczenia klasyfikatorów, przy jednoczesnym zachowaniu fizjologicznej interpretowalności parametrów częstotliwościowych.
 
-Nazwy rekordów zakodowane są w następujący sposób:
+\subsection{Wyznaczanie sygnału HRV}
 
-\begin{center}
-\texttt{f\{seria\}\{grupa\}\{numer\}}
-\end{center}
+Na podstawie czasów występowania kolejnych załamków R wyznaczono odstępy RR zgodnie z zależnością:
 
-gdzie seria przyjmuje wartości \texttt{1} lub \texttt{2}, grupa to \texttt{y} (young) lub \texttt{o} (old/elderly), a numer to dwucyfrowy identyfikator pacjenta od \texttt{01} do \texttt{10}.
+\[
+RR_i = t_{i+1} - t_i
+\]
 
-% =========================================================
+Otrzymany szereg RR jest sygnałem nierównomiernie próbkowanym. W celu umożliwienia przeprowadzenia analizy widmowej wykonano interpolację metodą splajnów sześciennych do równomiernej siatki czasowej o częstotliwości próbkowania 4 Hz.
 
-\section{Implementacja}
+Następnie zastosowano procedurę usuwania trendu (\textit{detrending}), eliminującą składową stałą i wolnozmienne zmiany sygnału, które mogłyby wpływać na wyniki analizy częstotliwościowej.
 
-Analiza została przeprowadzona w środowisku MATLAB. Proces obliczeniowy dla każdego rekordu przebiega według następujących kroków:
+\subsection{Analiza częstotliwościowa}
 
-\begin{enumerate}
+Gęstość widmową mocy (PSD, \textit{Power Spectral Density}) wyznaczono przy użyciu metody Welcha. Metoda ta polega na podziale sygnału na częściowo nakładające się segmenty, wyznaczeniu widma dla każdego segmentu oraz uśrednieniu otrzymanych wyników.
 
-    \item \textbf{Wyznaczenie odstępów RR.}
-    Odstępy RR obliczono jako różnice czasów kolejnych załamków R:
-    \[
-        RR_i = t_{i+1} - t_i \quad [s]
-    \]
+Na podstawie wyznaczonego PSD obliczono moc sygnału w standardowych pasmach wykorzystywanych w analizie HRV:
 
-    \item \textbf{Interpolacja sygnału RR.}
-    Sygnał RR jest nierównomiernie próbkowany (każdy odstęp ma inną długość), dlatego przed analizą widmową dokonano interpolacji metodą \textit{spline} do równomiernej siatki czasowej o częstotliwości $f_s = 4$~Hz. Wartość ta zapewnia spełnienie twierdzenia Nyquista dla składowej HF ($f_{max} = 0{,}4$~Hz):
-    \[
-        f_s = 4 \text{ Hz} > 2 \cdot f_{max} = 0{,}8 \text{ Hz}
-    \]
+\[
+LF \in [0.04,\;0.15]\;Hz
+\]
 
-    \item \textbf{Usunięcie trendu.}
-    Przed estymacją widma zastosowano funkcję \texttt{detrend} w celu usunięcia wolnozmiennego trendu (składowej stałej i liniowej), który mógłby zaburzać wyniki w paśmie LF.
+\[
+HF \in [0.15,\;0.40]\;Hz
+\]
 
-    \item \textbf{Estymacja widma mocy.}
-    Gęstość widmowa mocy (PSD) wyznaczona została dwiema metodami -- FFT oraz Welch -- których porównanie opisano w kolejnej sekcji.
+Moc w poszczególnych pasmach wyznaczono metodą całkowania numerycznego wykorzystując funkcję \texttt{trapz}. Ze względu na duży zakres zmian wartości parametrów zastosowano transformację logarytmiczną:
 
-    \item \textbf{Wyznaczenie mocy w pasmach.}
-    Moc w pasmach LF i HF obliczono metodą trapezów (\texttt{trapz}):
-    \[
-        LF = \int_{0{,}04}^{0{,}15} PSD(f)\,df, \qquad
-        HF = \int_{0{,}15}^{0{,}40} PSD(f)\,df
-    \]
+\[
+x_1 = \ln(LF)
+\]
 
-    \item \textbf{Obliczenie wskaźnika $LF/HF$.}
-    \[
-        \frac{LF}{HF}
-    \]
-    Wskaźnik ten odzwierciedla równowagę pomiędzy układem współczulnym (LF) a przywspółczulnym (HF).
+\[
+x_2 = \ln(HF)
+\]
 
-\end{enumerate}
+Uzyskane wielkości wykorzystano jako cechy wejściowe klasyfikatorów.
+
+\subsection{Klasyfikacja}
+
+Do rozróżniania grup wiekowych zastosowano dwa klasyfikatory:
+
+\begin{itemize}
+\item \textbf{Support Vector Machine (SVM)} z jądrem radialnym RBF,
+\item \textbf{Linear Discriminant Analysis (LDA)}.
+\end{itemize}
+
+Przed procesem uczenia przeprowadzono standaryzację cech metodą Z-score. Parametry normalizacji wyznaczano wyłącznie na zbiorze uczącym, a następnie wykorzystywano do przekształcenia danych testowych.
+
+\subsection{Walidacja modeli}
+
+Oceny skuteczności klasyfikatorów dokonano z wykorzystaniem pięciokrotnej walidacji krzyżowej typu Group K-Fold.
+
+W odróżnieniu od klasycznej walidacji krzyżowej, wszystkie segmenty pochodzące od jednego pacjenta były zawsze przypisywane wyłącznie do zbioru uczącego lub wyłącznie do zbioru testowego. Pozwoliło to uniknąć zjawiska przecieku informacji pomiędzy zbiorami (\textit{data leakage}) i zapewniło bardziej wiarygodną ocenę zdolności uogólniania modeli.
+
+Jako miary jakości klasyfikacji wykorzystano dokładność klasyfikacji (\textit{accuracy}) oraz macierze pomyłek (\textit{confusion matrices}).
 
 % =========================================================
 
 \section{Porównanie metod estymacji PSD: FFT vs Welch}
-\label{sec:porownanie}
+\label{sec}
+
+Wyznaczenie parametrów częstotliwościowych HRV wymaga estymacji gęstości widmowej mocy (PSD, \textit{Power Spectral Density}) sygnału. Najczęściej stosowane są dwie metody: klasyczna analiza widmowa oparta na szybkiej transformacie Fouriera (FFT) oraz metoda Welcha. W celu wyboru najbardziej odpowiedniej techniki dla analizowanych danych przeprowadzono porównanie obu metod pod względem jakości otrzymanych widm oraz stabilności wyznaczanych parametrów LF, HF i LF/HF.
 
 \subsection{Opis metod}
 
@@ -199,42 +185,138 @@ Analiza została przeprowadzona w środowisku MATLAB. Proces obliczeniowy dla ka
 \end{tabular}
 \end{table}
 
+Mimo że wartości LF/HF uzyskane metodami FFT i Welcha są zbliżone, widma wyznaczone metodą Welcha charakteryzują się znacznie mniejszą wariancją oraz lepszą czytelnością, co ułatwia interpretację wyników i zwiększa stabilność wyznaczanych cech.
+
 \subsection{Wybór metody}
 
 Na podstawie przeprowadzonego porównania do dalszej analizy wybrano metodę Welch. Z następujących powodów:
 
 \begin{itemize}
     \item Nagrania trwają 120 minut -- sygnał RR jest silnie niestacjonarny (zmieniają się fazy czuwania i snu), dlatego stabilność estymatora jest ważniejsza niż rozdzielczość.
-    \item Metoda Welcha daje gładkie, powtarzalne widmo, co przekłada się na stabilniejsze wartości parametrów LF, HF i $LF/HF$ -- kluczowe dla klasyfikatora SVM.
+    \item Metoda Welcha daje gładkie, powtarzalne widmo, co przekłada się na stabilniejsze wartości parametrów LF oraz HF wykorzystywanych podczas procesu klasyfikacji.
     \item FFT jest wrażliwe  na artefakty ruchowe i ektopowe uderzenia serca, które mogą wystąpić podczas tak długich nagrań.
 \end{itemize}
 
 % =========================================================
+\section{Wyniki badań}
 
-\section{Wyniki wstępne}
+W wyniku segmentacji 40 dwugodzinnych zapisów EKG wyekstrahowano łącznie 937 niezależnych segmentów o długości 5 minut. Dla każdego segmentu wyznaczono parametry LF oraz HF, które po transformacji logarytmicznej wykorzystano jako cechy wejściowe klasyfikatorów.
 
-Uzyskane wyniki wskazują na wyraźne różnice pomiędzy grupami:
+\subsection{Analiza widm HRV}
 
-\begin{itemize}
-    \item Wyraźnie większą składową wysokoczęstotliwościową ($HF$) w grupie młodych, co świadczy o silniejszej aktywności układu przywspółczulnego.
-    \item Dominację składowych niskoczęstotliwościowych ($LF$) u osób starszych.
-    \item Wyższy wskaźnik $LF/HF$ w grupie elderly, zgodny z literaturą medyczną opisującą osłabienie regulacji przywspółczulnej wraz z wiekiem.
-\end{itemize}
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{../wykresy/widma_hrv_porownanie.pdf}
+\caption{Porównanie widm HRV dla reprezentatywnych przedstawicieli grup Young i Elderly.}
+\label{fig:widma}
+\end{figure}
+
+Na rysunku \ref{fig:widma} przedstawiono przykładowe widma HRV wyznaczone metodą Welcha dla reprezentatywnych osób należących do grup Young oraz Elderly.
+
+Widoczne są istotne różnice w rozkładzie energii sygnału pomiędzy analizowanymi grupami. W przypadku osób młodych obserwuje się wyraźnie większą moc w paśmie HF (0.15--0.40 Hz), związanym z aktywnością układu przywspółczulnego oraz wpływem procesu oddychania na rytm serca.
+
+Dla grupy Elderly widoczny jest spadek mocy w paśmie HF oraz względny wzrost udziału składowych niskoczęstotliwościowych LF (0.04--0.15 Hz). Wynik ten jest zgodny z obserwowanym w literaturze osłabieniem regulacji przywspółczulnej wraz z wiekiem.
+
+\subsection{Analiza przestrzeni cech}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.8\textwidth]{../wykresy/przestrzen_cech_scatter.pdf}
+\caption{Przestrzeń cech utworzona przez parametry $\ln(LF)$ oraz $\ln(HF)$.}
+\label{fig:scatter}
+\end{figure}
+
+W celu oceny separowalności klas przeanalizowano rozkład próbek w przestrzeni cech utworzonej przez logarytmy parametrów LF i HF.
+
+Na rysunku \ref{fig:scatter} można zauważyć częściową separację pomiędzy grupami Young i Elderly. Próbki odpowiadające osobom młodym koncentrują się w obszarach wyższych wartości $\ln(HF)$, natomiast próbki należące do grupy Elderly wykazują tendencję do występowania przy niższych wartościach tej cechy.
+
+Jednocześnie widoczne jest częściowe nakładanie się obu grup, co uzasadnia zastosowanie metod klasyfikacyjnych w celu automatycznego wyznaczenia granicy decyzyjnej pomiędzy klasami.
+
+\subsection{Wyniki klasyfikacji}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{../wykresy/macierze_pomylek.pdf}
+\caption{Macierze pomyłek uzyskane dla klasyfikatorów SVM oraz LDA.}
+\label{fig:confusion}
+\end{figure}
+
+Klasyfikator LDA osiągnął średnią dokładność równą 78.12\%, natomiast klasyfikator SVM z jądrem RBF uzyskał dokładność 71.61\%.
+
+Analiza macierzy pomyłek wykazała, że przewaga klasyfikatora LDA wynika przede wszystkim z lepszego rozpoznawania segmentów należących do grupy Young. Dla tej klasy uzyskano skuteczność 83.1\%, podczas gdy klasyfikator SVM osiągnął 68.9\%.
+
+Dla grupy Elderly oba klasyfikatory uzyskały zbliżone wyniki (73.1\% dla LDA oraz 74.4\% dla SVM). Otrzymane rezultaty sugerują, że zależności pomiędzy cechami $\ln(LF)$ oraz $\ln(HF)$ a wiekiem badanych mają w dużej mierze charakter liniowy, dzięki czemu klasyfikator LDA skutecznie wyznacza granicę decyzyjną pomiędzy klasami.
+
+\begin{table}[H]
+\centering
+\caption{Porównanie średniej skuteczności klasyfikatorów}
+\begin{tabular}{|c|c|}
+\hline
+\textbf{Klasyfikator} & \textbf{Średnia dokładność [\%]} \\
+\hline
+SVM (RBF) & 71.61 \\
+\hline
+LDA & 78.12 \\
+\hline
+\end{tabular}
+\end{table}
+
+Uzyskane wyniki wskazują, że klasyfikator LDA osiągnął wyższą skuteczność klasyfikacji niż klasyfikator SVM. Oznacza to, że informacje zawarte w cechach $\ln(LF)$ oraz $\ln(HF)$ pozwalają na stosunkowo dobrą liniową separację grup wiekowych.
+
+Dokładność przekraczająca 78\% potwierdza, że parametry częstotliwościowe HRV zawierają istotną informację o wieku badanych osób i mogą być wykorzystywane do budowy modeli klasyfikacyjnych.
+Warto podkreślić, że ocena została przeprowadzona z wykorzystaniem walidacji Group K-Fold, co zapewnia bardziej rygorystyczną ocenę jakości modelu niż losowy podział segmentów na zbiory uczące i testowe.
 
 % =========================================================
+\section{Dyskusja wyników}
 
-\section{Plan dalszych prac}
+Uzyskane wyniki potwierdzają istnienie zależności pomiędzy parametrami częstotliwościowymi HRV a wiekiem badanych osób. Analiza widmowa wykazała wyraźny spadek mocy w paśmie HF u osób starszych, co jest zgodne z obserwowanym w literaturze osłabieniem aktywności układu przywspółczulnego wraz z wiekiem.
 
-Kolejny etap projektu obejmuje implementację klasyfikatora rozróżniającego grupy wiekowe na podstawie wyznaczonych parametrów HRV. Jako cechy wejściowe klasyfikatora wykorzystane zostaną wartości $LF$, $HF$ oraz $LF/HF$ wyznaczone metodą Welcha dla wszystkich 40 rekordów bazy Fantasia Database.
+Zastosowanie segmentacji 120-minutowych nagrań na okna pięciominutowe pozwoliło zwiększyć liczbę próbek do 937 segmentów, co umożliwiło przeprowadzenie procesu uczenia maszynowego pomimo stosunkowo niewielkiej liczby dostępnych pacjentów.
 
-Planuje się przetestowanie i porównanie dwóch klasyfikatorów:
+Analiza przestrzeni cech wykazała częściową separację pomiędzy grupami Young i Elderly. Oznacza to, że parametry LF oraz HF zawierają informację o wieku badanych, jednak nie pozwalają na całkowite rozdzielenie klas.
 
-\begin{itemize}
-    \item \textbf{SVM} (\textit{Support Vector Machine}) z jądrem RBF -- klasyfikator wyznaczający hiperpłaszczyznę maksymalnego marginesu w przestrzeni cech; szczególnie skuteczny przy małych zbiorach danych i nieliniowo separowalnych klasach.
-    \item \textbf{LDA} (\textit{Linear Discriminant Analysis}) -- klasyfikator liniowy oparty na analizie dyskryminacyjnej; zakłada normalność rozkładów i jednakowe macierze kowariancji klas, w zamian oferując prostą interpretowalność wyników.
-\end{itemize}
+Najlepsze wyniki uzyskano dla klasyfikatora LDA, który osiągnął średnią dokładność 78.12\%. Wynik ten okazał się wyższy niż w przypadku klasyfikatora SVM z jądrem RBF. Może to sugerować, że zależności pomiędzy wykorzystanymi cechami a wiekiem mają w dużej mierze charakter liniowy.
 
-Obydwa modele zostaną ocenione przy użyciu \textit{repeated 10-fold cross-validation} (10 powtórzeń), co przy zbiorze 40 rekordów zapewni wiarygodną i stabilną ocenę skuteczności. 
-Metoda oceny skuteczności klasyfikatorów oraz sposób prezentacji wyników zostaną określone w kolejnym etapie prac, po przeprowadzeniu wstępnych eksperymentów klasyfikacyjnych.
+Należy jednak zauważyć, że wykorzystano jedynie dwie cechy częstotliwościowe. Włączenie dodatkowych parametrów HRV, takich jak LF/HF, RMSSD czy SDNN, mogłoby potencjalnie zwiększyć skuteczność klasyfikacji.
+
+% =========================================================
+\section{Wnioski}
+
+\begin{enumerate}
+    \item Parametry częstotliwościowe HRV wykazują istotne różnice pomiędzy grupami Young i Elderly.
+    
+    \item Osoby młode charakteryzują się większą mocą w paśmie HF, związanym z aktywnością układu przywspółczulnego.
+    
+    \item Metoda Welcha zapewnia stabilniejszą estymację gęstości widmowej mocy niż klasyczna analiza FFT i została wybrana do dalszych analiz.
+    
+    \item Segmentacja sygnału na okna pięciominutowe umożliwiła zwiększenie liczby próbek do 937 segmentów przy zachowaniu zgodności z zaleceniami dotyczącymi analizy HRV.
+    
+    \item Najwyższą skuteczność klasyfikacji uzyskano dla klasyfikatora LDA, który osiągnął średnią dokładność 78.12\%.
+    
+    \item Uzyskane wyniki potwierdzają możliwość automatycznego rozróżniania grup wiekowych na podstawie parametrów częstotliwościowych HRV.
+\end{enumerate}
+
+% ========================================================
+
+\begin{thebibliography}{9}
+
+\bibitem{fantasia}
+Iyengar N., Peng C.-K., Morin R. i in.,
+Age-related alterations in the fractal scaling of cardiac interbeat interval dynamics,
+American Journal of Physiology, 1996.
+
+\bibitem{physionet}
+Goldberger A.L. i in.,
+PhysioBank, PhysioToolkit, and PhysioNet,
+Circulation, 2000.
+
+\bibitem{taskforce}
+Task Force of the European Society of Cardiology,
+Heart rate variability: Standards of measurement, physiological interpretation and clinical use,
+European Heart Journal, 1996.
+
+\end{thebibliography}
+
+% =========================================================
 
 \end{document}
