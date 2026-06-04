@@ -158,14 +158,16 @@ Wyznaczenie parametrów częstotliwościowych HRV wymaga estymacji gęstości wi
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{../wykresy/wykres_widmo_young.pdf}
-\caption{Porównanie widm HRV wyznaczonych metodą FFT i Welcha dla rekordu \texttt{f1y01} (young). Kolorem niebieskim zaznaczono pasmo LF (0{,}04--0{,}15~Hz), czerwonym pasmo HF (0{,}15--0{,}40~Hz).}
+\caption{Porównanie widm HRV wyznaczonych metodą FFT i Welcha dla rekordu \texttt{f1y01} (young). Kolorem niebieskim zaznaczono pasmo LF (0{,}04--0{,}15~Hz), czerwonym pasmo HF (0{,}15--0{,}40~Hz), dla pięciominutowego segmentu.}
 \end{figure}
 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{../wykresy/wykres_widmo_elderly.pdf}
-\caption{Porównanie widm HRV wyznaczonych metodą FFT i Welcha dla rekordu \texttt{f1o01} (elderly).}
+\caption{Porównanie widm HRV wyznaczonych metodą FFT i Welcha dla rekordu \texttt{f1o01} (elderly), dla pięciominutowego segmentu.}
 \end{figure}
+
+Wizualne rozbieżności oraz brak idealnego pokrywania się (nakładania) granic pasm niskiej częstotliwości (LF) i wysokiej częstotliwości (HF) z linią widma mocy (PSD) na wykresach wynikają z ograniczeń renderowania warstw wektorowych przez silnik graficzny środowiska MATLAB. Funkcja \texttt{area}, realizując rysowanie obiektów powierzchniowych typu wielokąt (polygon) od osi odciętych, nakłada na siebie niezależne warstwy. W procesie rasteryzacji i eksportu do formatu PDF (grafika wektorowa) powoduje to powstawanie drobnych artefaktów wizualnych na stykach zdefiniowanych zakresów częstotliwości, co jednak nie wpływa na poprawność numeryczną wyznaczonych całek (mocy pasm), na których bazowały klasyfikatory SVM i LDA.
 
 \begin{table}[H]
 \centering
@@ -192,7 +194,7 @@ Mimo że wartości LF/HF uzyskane metodami FFT i Welcha są zbliżone, widma wyz
 Na podstawie przeprowadzonego porównania do dalszej analizy wybrano metodę Welch. Z następujących powodów:
 
 \begin{itemize}
-    \item Nagrania trwają 120 minut -- sygnał RR jest silnie niestacjonarny (zmieniają się fazy czuwania i snu), dlatego stabilność estymatora jest ważniejsza niż rozdzielczość.
+    \item Nagrania trwają 120 minut -- sygnał RR jest silnie niestacjonarny, dlatego stabilność estymatora jest ważniejsza niż rozdzielczość.
     \item Metoda Welcha daje gładkie, powtarzalne widmo, co przekłada się na stabilniejsze wartości parametrów LF oraz HF wykorzystywanych podczas procesu klasyfikacji.
     \item FFT jest wrażliwe  na artefakty ruchowe i ektopowe uderzenia serca, które mogą wystąpić podczas tak długich nagrań.
 \end{itemize}
@@ -207,7 +209,7 @@ W wyniku segmentacji 40 dwugodzinnych zapisów EKG wyekstrahowano łącznie 937 
 \begin{figure}[H]
 \centering
 \includegraphics[width=\textwidth]{../wykresy/widma_hrv_porownanie.pdf}
-\caption{Porównanie widm HRV dla reprezentatywnych przedstawicieli grup Young i Elderly.}
+\caption{Porównanie widm HRV dla reprezentatywnych przedstawicieli grup Young i Elderly, dla pięciominutowego segmentu.}
 \label{fig:widma}
 \end{figure}
 

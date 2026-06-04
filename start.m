@@ -171,10 +171,11 @@ function [X_feat, Y_lab, G_num] = extract_segmented_features(ids, group_name, db
     end
 end
 
-% ---------------------------------------------------------
 function fig_handle = plot_hrv_spectra(db_path, win_len)
+%PLOT_HRV_SPECTRA  Widmo HRV dla jednego young i jednego elderly (wycinek 5-min).
+    % POPRAWKA: Zmieniono kolory w macierzy na zielony [0 0.8 0.4] dla obu wykresów
     examples = { fullfile(db_path,'f1y01'), 'Młody pacjent – segment 5-min (f1y01)', [0 0.8 0.4]; ...
-                 fullfile(db_path,'f1o01'), 'Starszy pacjent – segment 5-min (f1o01)', [0.85 0.3 0.1] };
+                 fullfile(db_path,'f1o01'), 'Starszy pacjent – segment 5-min (f1o01)', [0 0.8 0.4] };
     
     fig_handle = figure('Name','Widma HRV dla segmentów 5-minutowych','Units','centimeters','Position',[2 2 22 9]);
     
@@ -193,10 +194,12 @@ function fig_handle = plot_hrv_spectra(db_path, win_len)
         [~, ~, ~, f, PSD] = compute_hrv_freq(r_peaks_segment); 
         
         subplot(1,2,k);
+        % Główny wykres PSD i jego krawędź będą teraz zielone dla obu pacjentów
         area(f, PSD, 'FaceColor', col, 'FaceAlpha', 0.25, ...
              'EdgeColor', col, 'LineWidth', 1.5);
         hold on;
         
+        % Podświetlenie pasm LF i HF (nakładane na zielony wykres) zostaje bez zmian
         LF_mask = f >= 0.04 & f < 0.15; 
         HF_mask = f >= 0.15 & f < 0.4;  
         area(f(LF_mask), PSD(LF_mask), 'FaceColor',[0.2 0.4 1], 'FaceAlpha',0.45, 'EdgeColor','none');
@@ -205,12 +208,12 @@ function fig_handle = plot_hrv_spectra(db_path, win_len)
         xlim([0 0.5]);
         xlabel('Częstotliwość [Hz]');
         ylabel('PSD [s^2/Hz]');
-        title(lbl);
+        title(lbl, 'Interpreter', 'none'); % Zabezpieczenie przed gubieniem ogonków
         legend('Moc widmowa (PSD)','Pasmo LF (0.04–0.15 Hz)','Pasmo HF (0.15–0.4 Hz)', ...
-               'Location','northeast');
+               'Location','northeast', 'Interpreter', 'none');
         grid on;
     end
-    sgtitle('Porównanie widm mocy HRV (Metoda Welcha) dla grup wiekowych');
+    sgtitle('Porównanie widm mocy HRV (Metoda Welcha) dla grup wiekowych', 'Interpreter', 'none');
 end
 
 % ---------------------------------------------------------
