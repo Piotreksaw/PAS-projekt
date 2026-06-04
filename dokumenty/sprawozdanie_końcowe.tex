@@ -61,7 +61,7 @@ W celu realizacji założeń projektu opracowano kompletny łańcuch przetwarzan
 
 \subsection{Baza danych}
 
-W badaniach wykorzystano bazę \textit{Fantasia Database} udostępnioną przez platformę PhysioNet. Zbiór zawiera 40 długoterminowych zapisów sygnału EKG zarejestrowanych u zdrowych ochotników podzielonych na dwie grupy wiekowe:
+W badaniach wykorzystano bazę \textit{Fantasia Database} udostępnioną przez platformę PhysioNet \cite{fantasia,physionet}. Zbiór zawiera 40 długoterminowych zapisów sygnału EKG zarejestrowanych u zdrowych ochotników podzielonych na dwie grupy wiekowe:
 
 \begin{itemize}
 \item \textbf{Young} – 20 osób w wieku od 21 do 34 lat,
@@ -72,7 +72,7 @@ Każde nagranie trwa 120 minut i zostało zarejestrowane z częstotliwością pr
 
 \subsection{Segmentacja sygnału}
 
-Ze względu na ograniczoną liczbę dostępnych pacjentów oraz zgodnie z zaleceniami dotyczącymi krótkoterminowej analizy HRV, każde 120-minutowe nagranie podzielono na niezależne segmenty o długości 5 minut (300 s).
+Ze względu na ograniczoną liczbę dostępnych pacjentów oraz zgodnie z zaleceniami dotyczącymi krótkoterminowej analizy HRV, każde 120-minutowe nagranie podzielono na niezależne segmenty o długości 5 minut (300 s) \cite{taskforce}.
 Łącznie wyekstrahowano 937 segmentów pochodzących od 40 pacjentów.
 
 Dla każdego segmentu wyznaczano oddzielny zestaw parametrów HRV. Takie podejście pozwoliło znacząco zwiększyć liczbę próbek wykorzystywanych podczas procesu uczenia klasyfikatorów, przy jednoczesnym zachowaniu fizjologicznej interpretowalności parametrów częstotliwościowych.
@@ -93,7 +93,7 @@ Następnie zastosowano procedurę usuwania trendu (\textit{detrending}), eliminu
 
 Gęstość widmową mocy (PSD, \textit{Power Spectral Density}) wyznaczono przy użyciu metody Welcha. Metoda ta polega na podziale sygnału na częściowo nakładające się segmenty, wyznaczeniu widma dla każdego segmentu oraz uśrednieniu otrzymanych wyników.
 
-Na podstawie wyznaczonego PSD obliczono moc sygnału w standardowych pasmach wykorzystywanych w analizie HRV:
+Na podstawie wyznaczonego PSD obliczono moc sygnału w standardowych pasmach wykorzystywanych w analizie HRV \cite{taskforce}:
 
 \[
 LF \in [0.04,\;0.15]\;Hz
@@ -271,7 +271,7 @@ Warto podkreślić, że ocena została przeprowadzona z wykorzystaniem walidacji
 % =========================================================
 \section{Dyskusja wyników}
 
-Uzyskane wyniki potwierdzają istnienie zależności pomiędzy parametrami częstotliwościowymi HRV a wiekiem badanych osób. Analiza widmowa wykazała wyraźny spadek mocy w paśmie HF u osób starszych, co jest zgodne z obserwowanym w literaturze osłabieniem aktywności układu przywspółczulnego wraz z wiekiem.
+Uzyskane wyniki potwierdzają istnienie zależności pomiędzy parametrami częstotliwościowymi HRV a wiekiem badanych osób. Analiza widmowa wykazała wyraźny spadek mocy w paśmie HF u osób starszych, co jest zgodne z obserwowanym w literaturze osłabieniem aktywności układu przywspółczulnego wraz z wiekiem \cite{fantasia}.
 
 Zastosowanie segmentacji 120-minutowych nagrań na okna pięciominutowe pozwoliło zwiększyć liczbę próbek do 937 segmentów, co umożliwiło przeprowadzenie procesu uczenia maszynowego pomimo stosunkowo niewielkiej liczby dostępnych pacjentów.
 
@@ -313,9 +313,12 @@ PhysioBank, PhysioToolkit, and PhysioNet,
 Circulation, 2000.
 
 \bibitem{taskforce}
-Task Force of the European Society of Cardiology,
-Heart rate variability: Standards of measurement, physiological interpretation and clinical use,
-European Heart Journal, 1996.
+Task Force of the European Society of Cardiology and
+the North American Society of Pacing and Electrophysiology,
+Heart rate variability: Standards of measurement,
+physiological interpretation and clinical use,
+European Heart Journal,
+vol. 17, no. 3, pp. 354--381, 1996.
 
 \end{thebibliography}
 
