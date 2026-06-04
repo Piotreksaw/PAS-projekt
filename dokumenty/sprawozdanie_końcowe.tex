@@ -43,8 +43,11 @@
 
 \maketitle
 
+\tableofcontents
+
 % =========================================================
 
+\newpage
 \section{Cel projektu}
 
 Celem projektu była analiza częstotliwościowa zmienności rytmu serca (ang. \textit{Heart Rate Variability}, HRV) na podstawie zapisów elektrokardiograficznych pochodzących z bazy danych Fantasia Database. Analiza obejmowała wyznaczenie parametrów widmowych LF oraz HF, opisujących aktywność autonomicznego układu nerwowego.
@@ -230,7 +233,7 @@ Dla grupy Elderly widoczny jest spadek mocy w paśmie HF oraz względny wzrost u
 
 W celu oceny separowalności klas przeanalizowano rozkład próbek w przestrzeni cech utworzonej przez logarytmy parametrów LF i HF.
 
-Na rysunku \ref{fig:scatter} można zauważyć częściową separację pomiędzy grupami Young i Elderly. Próbki odpowiadające osobom młodym koncentrują się w obszarach wyższych wartości $\ln(HF)$, natomiast próbki należące do grupy Elderly wykazują tendencję do występowania przy niższych wartościach tej cechy.
+Na rysunku \ref{fig:scatter} można zauważyć częściową separację pomiędzy grupami Young i Elderly. Próbki odpowiadające osobom młodym koncentrują się w obszarach wyższych wartości $HF$, natomiast próbki należące do grupy Elderly wykazują tendencję do występowania przy niższych wartościach tej cechy.
 
 Jednocześnie widoczne jest częściowe nakładanie się obu grup, co uzasadnia zastosowanie metod klasyfikacyjnych w celu automatycznego wyznaczenia granicy decyzyjnej pomiędzy klasami.
 
@@ -247,7 +250,7 @@ Klasyfikator LDA osiągnął średnią dokładność równą 78.12\%, natomiast 
 
 Analiza macierzy pomyłek wykazała, że przewaga klasyfikatora LDA wynika przede wszystkim z lepszego rozpoznawania segmentów należących do grupy Young. Dla tej klasy uzyskano skuteczność 83.1\%, podczas gdy klasyfikator SVM osiągnął 68.9\%.
 
-Dla grupy Elderly oba klasyfikatory uzyskały zbliżone wyniki (73.1\% dla LDA oraz 74.4\% dla SVM). Otrzymane rezultaty sugerują, że zależności pomiędzy cechami $\ln(LF)$ oraz $\ln(HF)$ a wiekiem badanych mają w dużej mierze charakter liniowy, dzięki czemu klasyfikator LDA skutecznie wyznacza granicę decyzyjną pomiędzy klasami.
+Dla grupy Elderly oba klasyfikatory uzyskały zbliżone wyniki (73.1\% dla LDA oraz 74.4\% dla SVM). Otrzymane rezultaty sugerują, że zależności pomiędzy cechami $LF$ oraz $HF$ a wiekiem badanych mają w dużej mierze charakter liniowy, dzięki czemu klasyfikator LDA skutecznie wyznacza granicę decyzyjną pomiędzy klasami.
 
 \begin{table}[H]
 \centering
@@ -263,13 +266,13 @@ LDA & 78.12 \\
 \end{tabular}
 \end{table}
 
-Uzyskane wyniki wskazują, że klasyfikator LDA osiągnął wyższą skuteczność klasyfikacji niż klasyfikator SVM. Oznacza to, że informacje zawarte w cechach $\ln(LF)$ oraz $\ln(HF)$ pozwalają na stosunkowo dobrą liniową separację grup wiekowych.
+Uzyskane wyniki wskazują, że klasyfikator LDA osiągnął wyższą skuteczność klasyfikacji niż klasyfikator SVM. Oznacza to, że informacje zawarte w cechach $LF$ oraz $HF$ pozwalają na stosunkowo dobrą liniową separację grup wiekowych.
 
 Dokładność przekraczająca 78\% potwierdza, że parametry częstotliwościowe HRV zawierają istotną informację o wieku badanych osób i mogą być wykorzystywane do budowy modeli klasyfikacyjnych.
 Warto podkreślić, że ocena została przeprowadzona z wykorzystaniem walidacji Group K-Fold, co zapewnia bardziej rygorystyczną ocenę jakości modelu niż losowy podział segmentów na zbiory uczące i testowe.
 
 % =========================================================
-\section{Dyskusja wyników}
+\section{Podsumowanie wyników}
 
 Uzyskane wyniki potwierdzają istnienie zależności pomiędzy parametrami częstotliwościowymi HRV a wiekiem badanych osób. Analiza widmowa wykazała wyraźny spadek mocy w paśmie HF u osób starszych, co jest zgodne z obserwowanym w literaturze osłabieniem aktywności układu przywspółczulnego wraz z wiekiem \cite{fantasia}.
 

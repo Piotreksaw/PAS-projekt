@@ -99,11 +99,11 @@ all_Y_pred_LDA_cat = categorical(all_Y_pred_LDA);
 
 subplot(1,2,1);
 confusionchart(all_Y_test_SVM_cat, all_Y_pred_SVM_cat, ...
-    'Title', 'Macierz Pomyłek: SVM (Segmenty 5-min)', 'RowSummary', 'row-normalized', 'ColumnSummary', 'column-normalized');
+    'Title', 'Macierz Pomyłek: SVM', 'RowSummary', 'row-normalized', 'ColumnSummary', 'column-normalized');
 
 subplot(1,2,2);
 confusionchart(all_Y_test_LDA_cat, all_Y_pred_LDA_cat, ...
-    'Title', 'Macierz Pomyłek: LDA (Segmenty 5-min)', 'RowSummary', 'row-normalized', 'ColumnSummary', 'column-normalized');
+    'Title', 'Macierz Pomyłek: LDA', 'RowSummary', 'row-normalized', 'ColumnSummary', 'column-normalized');
 
 %% --- WYWOŁANIE WYKRESÓW PORÓWNAWCZYCH ---
 fig2 = plot_hrv_spectra(db_path, window_len_s);
@@ -174,8 +174,8 @@ end
 function fig_handle = plot_hrv_spectra(db_path, win_len)
 %PLOT_HRV_SPECTRA  Widmo HRV dla jednego young i jednego elderly (wycinek 5-min).
     % POPRAWKA: Zmieniono kolory w macierzy na zielony [0 0.8 0.4] dla obu wykresów
-    examples = { fullfile(db_path,'f1y01'), 'Młody pacjent – segment 5-min (f1y01)', [0 0.8 0.4]; ...
-                 fullfile(db_path,'f1o01'), 'Starszy pacjent – segment 5-min (f1o01)', [0 0.8 0.4] };
+    examples = { fullfile(db_path,'f1y01'), 'Młody pacjent (f1y01)', [0 0.8 0.4]; ...
+                 fullfile(db_path,'f1o01'), 'Starszy pacjent (f1o01)', [0 0.8 0.4] };
     
     fig_handle = figure('Name','Widma HRV dla segmentów 5-minutowych','Units','centimeters','Position',[2 2 22 9]);
     
@@ -213,7 +213,7 @@ function fig_handle = plot_hrv_spectra(db_path, win_len)
                'Location','northeast', 'Interpreter', 'none');
         grid on;
     end
-    sgtitle('Porównanie widm mocy HRV (Metoda Welcha) dla grup wiekowych', 'Interpreter', 'none');
+    sgtitle('Porównanie widm mocy HRV', 'Interpreter', 'none');
 end
 
 % ---------------------------------------------------------
