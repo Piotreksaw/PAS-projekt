@@ -1,9 +1,6 @@
 clear all; close all; clc;
 
-%% =========================================================
-%  Porównanie metod PSD: FFT vs Welch (Segmentacja 5-min)
-%  dla klasyfikacji HRV young vs elderly (Fantasia Database)
-% =========================================================
+%% Przygotowanie etykiet
 db_path     = 'fantasia-database-1.0.0/';
 young_ids   = {'f1y01','f1y02','f1y03','f1y04','f1y05', ...
                'f1y06','f1y07','f1y08','f1y09','f1y10'};
@@ -12,11 +9,11 @@ elderly_ids = {'f1o01','f1o02','f1o03','f1o04','f1o05', ...
 all_ids    = [young_ids,   elderly_ids];
 all_labels = [repmat({'young'},1,10), repmat({'elderly'},1,10)];
 
-%% 1. Ekstrakcja cech z wycinka 5-minutowego (300 sekund)
-window_len_s = 300; % Dokładnie 5 minut, tak jak w kodzie głównym
+%% Podział na 300s przedziały
+window_len_s = 300; 
 
 N = numel(all_ids);
-feats_fft   = nan(N, 2);   % Przechowujemy [log(LF), log(HF)]
+feats_fft   = nan(N, 2);
 feats_welch = nan(N, 2);
 
 fprintf('%-10s  %6s %6s  |  %6s %6s\n', 'Rekord', 'log_LF_f', 'log_HF_f', 'log_LF_w', 'log_HF_w');
@@ -24,40 +21,37 @@ fprintf('%s\n', repmat('-',1,50));
 
 for i = 1:N
     rec = fullfile(db_path, all_ids{i});
-    try
-        [signal, fs] = rdsamp(rec); 
-        ann          = rdann(rec, 'ecg'); 
-        time         = (0:length(signal)-1) / fs;
-        r_peaks_t    = time(ann); 
-        
-        % OGRANICZENIE DO PRZEBIEGU 5 MINUT
-        r_peaks_segment = r_peaks_t(r_peaks_t >= 0 & r_peaks_t < window_len_s);
-        
-        % Preprocessing dla wycinka
-        RR        = diff(r_peaks_segment);
-        t_RR      = r_peaks_segment(2:end);
-        fs_interp = 4;
-        t_interp  = t_RR(1):1/fs_interp:t_RR(end);
-        RR_interp = interp1(t_RR, RR, t_interp, 'spline');
-        RR_interp = detrend(RR_interp);
-        
-        % --- FFT ---
-        [LF_f, HF_f, ~, ~, ~] = psd_fft(RR_interp, fs_interp);
-        % --- Welch ---
-        [LF_w, HF_w, ~, ~, ~] = psd_welch(RR_interp, fs_interp);
-        
-        % Zapisujemy zlogarytmowane cechy (ln)
-        feats_fft(i,:)   = [log(LF_f),  log(HF_f)];
-        feats_welch(i,:) = [log(LF_w),  log(HF_w)];
-        
-        fprintf('%-10s  %6.4f %6.4f  |  %6.4f %6.4f\n', ...
-            all_ids{i}, log(LF_f), log(HF_f), log(LF_w), log(HF_w));
-    catch ME
-        warning('Błąd dla %s: %s', all_ids{i}, ME.message); 
-    end
+    [signal, fs] = rdsamp(rec); 
+    ann          = rdann(rec, 'ecg'); 
+    time         = (0:length(signal)-1) / fs;
+    r_peaks_t    = time(ann); 
+    
+   
+    r_peaks_segment = r_peaks_t(r_peaks_t >= 0 & r_peaks_t < window_len_s);
+    
+    % preprocessing
+    RR        = diff(r_peaks_segment);
+    t_RR      = r_peaks_segment(2:end);
+    fs_interp = 4;
+    t_interp  = t_RR(1):1/fs_interp:t_RR(end);
+    RR_interp = interp1(t_RR, RR, t_interp, 'spline');
+    RR_interp = detrend(RR_interp);
+    
+    % FFT
+    [LF_f, HF_f, ~, ~, ~] = psd_fft(RR_interp, fs_interp);
+    % Welch
+    [LF_w, HF_w, ~, ~, ~] = psd_welch(RR_interp, fs_interp);
+    
+    % Zapis do logarytmu
+    feats_fft(i,:)   = [log(LF_f),  log(HF_f)];
+    feats_welch(i,:) = [log(LF_w),  log(HF_w)];
+    
+    fprintf('%-10s  %6.4f %6.4f  |  %6.4f %6.4f\n', ...
+        all_ids{i}, log(LF_f), log(HF_f), log(LF_w), log(HF_w));
+
 end
 
-%% 2. Klasyfikacja SVM dla obu metod
+%% Klasyfikacja SVM dla obu metod
 Y = categorical(all_labels');
 rng(42);
 fprintf('\n=== Klasyfikacja SVM – 10-fold cross-validation ===\n');

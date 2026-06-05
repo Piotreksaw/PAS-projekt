@@ -94,7 +94,7 @@ Następnie zastosowano procedurę usuwania trendu (\textit{detrending}), eliminu
 
 \subsection{Analiza częstotliwościowa}
 
-Gęstość widmową mocy (PSD, \textit{Power Spectral Density}) wyznaczono przy użyciu metody Welcha. Metoda ta polega na podziale sygnału na częściowo nakładające się segmenty, wyznaczeniu widma dla każdego segmentu oraz uśrednieniu otrzymanych wyników.
+Kluczowym etapem ekstrakcji cech w dziedzinie częstotliwości jest wybór odpowiedniego estymatora gęstości widmowej mocy (PSD, \textit{Power Spectral Density}). Wybór ten ma bezpośredni wpływ na stabilność numeryczną parametrów $LF$ oraz $HF$, a w konsekwencji --- na późniejszą skuteczność modeli klasyfikacyjnych. W ramach niniejszego rozdziału dokonano bezpośredniego zestawienia dwóch najpopularniejszych podejść: klasycznego periodogramu opartego na szybkiej transformacie Fouriera (FFT) oraz algorytmu Welcha. Ewaluację przeprowadzono zarówno pod kątem jakości wizualnej uzyskanego widma, jak i powtarzalności wyznaczanych cech oraz ich wpływu na finalną dokładność klasyfikatora SVM.
 
 Na podstawie wyznaczonego PSD obliczono moc sygnału w standardowych pasmach wykorzystywanych w analizie HRV \cite{taskforce}:
 
@@ -270,6 +270,8 @@ Uzyskane wyniki wskazują, że klasyfikator LDA osiągnął wyższą skutecznoś
 
 Dokładność przekraczająca 78\% potwierdza, że parametry częstotliwościowe HRV zawierają istotną informację o wieku badanych osób i mogą być wykorzystywane do budowy modeli klasyfikacyjnych.
 Warto podkreślić, że ocena została przeprowadzona z wykorzystaniem walidacji Group K-Fold, co zapewnia bardziej rygorystyczną ocenę jakości modelu niż losowy podział segmentów na zbiory uczące i testowe.
+
+Ciekawym zjawiskiem zaobserwowanym w badaniach jest wyższa skuteczność klasyfikatora LDA w porównaniu do modelu SVM z nieliniowym jądrem RBF. Sytuacja ta może wydawać się nieintuicyjna, ponieważ maszyna wektorów nośnych z mapowaniem nieliniowym dysponuje teoretycznie znacznie większą elastycznością w dopasowywaniu granic decyzyjnych. Wyjaśnieniem tej zależności jest silnie liniowy charakter struktury danych w wybranej przestrzeni cech częstotliwościowych HRV, gdzie prosta granica rozdzielająca wprowadzana przez LDA okazuje się w zupełności wystarczająca. W takich warunkach algorytm SVM z jądrem RBF, z powodu braku dodatkowej optymalizacji hiperparametrów (takich jak parametr regularyzacji $C$ oraz szerokość jądra $\gamma$), wykazuje tendencję do nadmiernego dopasowywania się do szumu i próbek leżących w obszarze przenikania się obu klas. W efekcie model LDA, jako prostszy matematycznie i mniej podatny na przeuczenie (\textit{overfitting}) przy gęsto upakowanych i częściowo nakładających się chmurach punktów, zapewnia znacznie lepszą zdolność generalizacji dla nowych danych pacjentów.
 
 % =========================================================
 \section{Podsumowanie wyników}
