@@ -137,8 +137,7 @@ if ~exist(output_dir, 'dir')
     fprintf('Utworzono nowy folder eksportowy: "%s"\n', output_dir);
 end
 
-% hack: mieliśmy problem z niektórymi polskimi literami, wymuszenie
-% czcionki Arial
+% czcionki Arial, polskie znaki
 set(findobj(fig1, '-property', 'FontName'), 'FontName', 'Arial');
 set(findobj(fig2, '-property', 'FontName'), 'FontName', 'Arial');
 set(findobj(fig3, '-property', 'FontName'), 'FontName', 'Arial');
